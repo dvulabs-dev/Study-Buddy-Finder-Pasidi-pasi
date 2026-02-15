@@ -13,7 +13,8 @@ export const searchStudentsBySubject = async (subject) => {
 };
 
 //Search Students by subject and availability
-export const searchStudentByAvailability = async(searchData) => {
+//Why using post? Because we need to send more complex data (subject + availability) in the request body
+export const searchStudentsByAvailability = async(searchData) => {
     try {
         const response = await api.post("/users/search/availability", searchData);
         return response.data;
