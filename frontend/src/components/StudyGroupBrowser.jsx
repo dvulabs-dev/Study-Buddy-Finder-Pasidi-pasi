@@ -6,6 +6,7 @@ import {
     searchStudyGroupsByAvailability,
     joinStudyGroup
 } from '../services/studyGroupService';
+import CreateGroupModal from "./CreateGroupModal";
 
 
 const StudyGroupBrowser = () => {
@@ -360,25 +361,14 @@ const StudyGroupBrowser = () => {
 
             )}
             {/* Create Group Modal placeholder */}
-            {showCreateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" >
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <h3 className="text-xl font-semibold mb-4">Create New Study Group</h3>
-                        <p className="text-gray-600 mb-4">Create group modal will be implemented next..</p>
-                        <button
-                         onClick={() => setShowCreateModal(false)}
-                         className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                         >
-
-                            Close
-
-                        </button>
-
-                    </div>
-
-                </div>
-
-            )}
+          <CreateGroupModal
+           isOpen={showCreateModal}
+           onClose={() => setShowCreateModal(false)}
+           onSuccess={loadAllGroups}
+          
+        
+          
+          />
 
         </div>
     );

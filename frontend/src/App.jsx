@@ -5,6 +5,12 @@ import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import PrivateRoute from "./components/PrivateRoute";
 
+import StudentSearch from "./components/StudentSearch";
+import StudyGroupBrowser from "./components/StudyGroupBrowser";
+import MyGroups from "./components/MyGroups";
+
+
+
 function App() {
   return (
     <AuthProvider>
@@ -21,6 +27,35 @@ function App() {
               </PrivateRoute>
             }
           />
+         <Route
+            path="/find-buddies"
+            element={
+              <PrivateRoute>
+                <StudentSearch />
+              </PrivateRoute>
+            }
+          />
+          <Route
+           path="/study-groups"
+           element={
+              <PrivateRoute>
+                <StudyGroupBrowser />
+                </PrivateRoute>
+           }
+          
+          
+          />
+          <Route
+           path="/my-groups"
+           element={
+              <PrivateRoute>
+                <MyGroups />
+                </PrivateRoute>
+           }
+          
+          
+          />
+
         </Routes>
       </Router>
     </AuthProvider>
