@@ -54,35 +54,35 @@ const studyGroupSchema = new mongoose.Schema(
     }
 );
 
-// Validation: Check if group is full before adding member
+// Validation: Check if group is full before adding member (method for external use)
 studyGroupSchema.methods.isFull = function () {
     return this.members.length >= this.maxMembers;
 };
 
-// Adding creator to members array when group is created
-studyGroupSchema.pre("save", function (next) {
-    if (this.isNew && !this.members.includes(this.creator)) {
-        this.members.push(this.creator);
-    }
-    next();
-});
-
-// Prevent adding more members than maxMembers
-studyGroupSchema.pre("save", function (next) {
-    if (this.members.length > this.maxMembers) {
-        next(new Error("Cannot add more members, group is full"));
-    } else {
-        next();
-    }
-});
-
-// Validate at least one meeting time is selected (custom validation)
-studyGroupSchema.pre("save", function (next) {
-    const mt = this.meetingTime;
-    if (!mt.weekdays && !mt.weekend && !mt.morning && !mt.evening) {
-        next(new Error("At least one meeting time must be selected"));
-    } else {
-        next();
+// Adding creator to members array when group is created AND validate
+studyGroupSchema.pre("save", async function () {
+    // Only for new groups
+    if (this.isNew) {
+        // Add creator to members if not already there (compare as strings for ObjectId)
+        const creatorId = this.creator.toString();
+        const memberIds = this.members.map(m => m.toString());
+        
+        if (!memberIds.includes(creatorId)) {
+            this.members.push(this.creator);
+        }
+        
+        // Validate meeting time
+        if (this.meetingTime) {
+            const mt = this.meetingTime;
+            if (!mt.weekdays && !mt.weekend && !mt.morning && !mt.evening) {
+                throw new Error("At least one meeting time must be selected");
+            }
+        }
+        
+        // Validate member count
+        if (this.members.length > this.maxMembers) {
+            throw new Error("Cannot add more members, group is full");
+        }
     }
 });
 

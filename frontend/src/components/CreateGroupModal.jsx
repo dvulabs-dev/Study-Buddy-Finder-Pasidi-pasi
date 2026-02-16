@@ -90,7 +90,19 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess}) => {
             onClose(); //Close modal
 
         } catch (error) {
-            setError(error.message || 'Failed to create study group. Please try again.');
+            console.error('Error creating study group:', error);
+            // Handle different error formats safely
+            let errorMessage = 'Failed to create study group. Please try again.';
+            
+            if (typeof error === 'string') {
+                errorMessage = error;
+            } else if (error?.message && typeof error.message === 'string') {
+                errorMessage = error.message;
+            } else if (error?.response?.data?.message && typeof error.response.data.message === 'string') {
+                errorMessage = error.response.data.message;
+            }
+            
+            setError(errorMessage);
 
         } finally {
             setLoading(false);
@@ -191,7 +203,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess}) => {
               max="50"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             />
-            <p className="text-xs text-gray-500 mt-1">Between 2 and 50 members</p>
+            <p className="text-xs text-gray-500 mt-1">Between 2 and 10 members</p>
           </div>
 
           {/* Meeting Time */}

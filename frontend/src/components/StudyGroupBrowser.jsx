@@ -1,5 +1,5 @@
 import {useState, useEffect} from "react";
-
+import { useNavigate } from "react-router-dom";
 import {
     getAllStudyGroups,
     searchStudyGroupsBySubject,
@@ -10,6 +10,7 @@ import CreateGroupModal from "./CreateGroupModal";
 
 
 const StudyGroupBrowser = () => {
+    const navigate = useNavigate();
     const [searchType, setSearchType] = useState("all"); //all , subject, adcavanced
     const [subject, setSubject] = useState('');
     const [meetingTime, setMeetingTime] = useState({
@@ -128,7 +129,15 @@ const StudyGroupBrowser = () => {
     return (
         <div className="bg-white rounded-lg shadow p-6">
             <div  className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Study Groups</h2>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
+                  >
+                    ← Back
+                  </button>
+                  <h2 className="text-2xl font-bold text-gray-800">Study Groups</h2>
+                </div>
                 <button 
                  onClick={() => setShowCreateModal(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
