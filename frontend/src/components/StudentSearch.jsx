@@ -13,7 +13,8 @@ const StudentSearch = () => {
 
  const [students, setStudents] = useState([]);
  const[loading, setLoading] = useState(false);
- const [error, setError] = useState(false);
+ const [error, setError] = useState('');
+ const [hasSearched, setHasSearched] = useState(false);
 
 
  //Handle simple search by subject only
@@ -25,9 +26,11 @@ const StudentSearch = () => {
     }
     setLoading(true);
     setError('');
+    setHasSearched(false);
     try {
         const data = await searchStudentsBySubject(subject);
         setStudents(data.users);
+        setHasSearched(true);
         
     } catch (error) {
         setError(error.message || "Failed to search students");
@@ -46,6 +49,7 @@ const StudentSearch = () => {
     }
     setLoading(true);
     setError('');
+    setHasSearched(false);
     try{
         const data = await searchStudentsByAvailability({
             subject,
@@ -53,6 +57,7 @@ const StudentSearch = () => {
         });
 
         setStudents(data.users);
+        setHasSearched(true);
 
     } catch (error) {
         setError(error.message || "Failed to search students");
@@ -269,7 +274,7 @@ const StudentSearch = () => {
 
            )}
            {/*  No Results*/}
-           {!loading && students.length === 0 && subject && (
+           {!loading && hasSearched && students.length === 0 && (
              <div className="text-center py-8 text-gray-500">
                 No Students found. Try different search criteria.
 

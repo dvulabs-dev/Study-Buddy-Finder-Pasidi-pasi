@@ -1,4 +1,5 @@
 import{ useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { getAllStudyGroups,
          getStudyGroupById,
@@ -11,6 +12,7 @@ import { getAllStudyGroups,
  const MyGroups = () => {
 
     const { user } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [myCreatedGroups, setMyCreatedGroups] = useState([]);
     const [myJoinedGroups, setMyJoinedGroups] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -34,16 +36,19 @@ import { getAllStudyGroups,
             const data = await getAllStudyGroups();
             const allGroups = data.studyGroups;
 
+            // user from AuthContext has "id", backend returns "_id"
+            const userId = user._id || user.id;
+
             //Filter groups created by me
             const created = allGroups.filter(
-              (group) => group.creator?._id === user._id  
+              (group) => group.creator?._id === userId || group.creator?.id === userId
             );
 
             //Filter groups I joined (but didnt create)
             const joined = allGroups.filter(
                 (group) => 
-                    group.members?.some((member) => member._id === user._id) &&
-                    group.creator?._id !== user._id
+                    group.members?.some((member) => (member._id === userId || member.id === userId)) &&
+                    group.creator?._id !== userId && group.creator?.id !== userId
             );
 
             setMyCreatedGroups(created);
@@ -75,7 +80,7 @@ import { getAllStudyGroups,
    
     //Open edit modal
     const handleOpenEdit = (group) => {
-        selectedGroup(group);
+        setSelectedGroup(group);
         setEditFormData({
             name: group.name,
             description: group.description || '',
@@ -198,7 +203,15 @@ import { getAllStudyGroups,
     return (
 
      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">My Study Groups</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">My Study Groups</h2>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
 
         {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
