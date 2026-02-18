@@ -33,8 +33,12 @@ const Login = () => {
         // Use AuthContext login
         login(response.data.user, response.data.token);
 
-        // Navigate to dashboard
-        navigate("/dashboard");
+        // Navigate based on user role
+        if (response.data.user.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (err) {
       setError(
