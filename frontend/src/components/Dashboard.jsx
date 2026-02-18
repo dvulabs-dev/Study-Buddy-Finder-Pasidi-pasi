@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, isAdmin } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -19,12 +19,22 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">
             Study Buddy Finder
           </h1>
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-          >
-            Logout
-          </button>
+          <div className="flex gap-3">
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                Admin Panel
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
