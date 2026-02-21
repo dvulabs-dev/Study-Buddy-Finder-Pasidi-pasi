@@ -9,6 +9,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import StudentSearch from "./components/StudentSearch";
 import StudyGroupBrowser from "./components/StudyGroupBrowser";
 import MyGroups from "./components/MyGroups";
+import Profile from "./components/Profile";
 
 
 
@@ -63,6 +64,14 @@ function App() {
            }
           
           
+          />
+          <Route
+           path="/profile"
+           element={
+              <PrivateRoute>
+                <Profile />
+                </PrivateRoute>
+           }
           />
 
         </Routes>

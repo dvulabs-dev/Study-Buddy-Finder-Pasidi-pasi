@@ -19,7 +19,27 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">
             Study Buddy Finder
           </h1>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
+            {/* Profile Icon */}
+            <button
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg transition-colors duration-200"
+              title="My Profile"
+            >
+              {user?.profileImage ? (
+                <img
+                  src={user.profileImage}
+                  alt="Profile"
+                  className="w-7 h-7 rounded-full object-cover border-2 border-indigo-500"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+              Profile
+            </button>
+
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin')}
@@ -64,7 +84,10 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               Update your study preferences and availability
             </p>
-            <button className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
+            <button
+              onClick={() => navigate('/profile')}
+              className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+            >
               Edit Profile →
             </button>
           </div>
@@ -81,9 +104,9 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               Search for students studying the same subjects
             </p>
-            <button 
-             onClick={() => navigate('/find-buddies')}
-            className="text-green-600 hover:text-green-700 font-medium text-sm">
+            <button
+              onClick={() => navigate('/find-buddies')}
+              className="text-green-600 hover:text-green-700 font-medium text-sm">
               Search Now →
             </button>
           </div>
@@ -100,33 +123,33 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm mb-4">
               Browse and join existing study groups
             </p>
-            <button 
-             onClick={() => navigate('/study-groups')}
-            className="text-purple-600 hover:text-purple-700 font-medium text-sm">
+            <button
+              onClick={() => navigate('/study-groups')}
+              className="text-purple-600 hover:text-purple-700 font-medium text-sm">
               View Groups →
             </button>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-200">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              My Groups
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Manage your created and joined study groups
-            </p>
-            <button 
-              onClick={() => navigate('/my-groups')}
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-            >
-              My Groups →
-            </button>
-       </div>
+          <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
+            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            My Groups
+          </h3>
+          <p className="text-gray-600 text-sm mb-4">
+            Manage your created and joined study groups
+          </p>
+          <button
+            onClick={() => navigate('/my-groups')}
+            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+          >
+            My Groups →
+          </button>
+        </div>
 
         {/* Profile Summary */}
         <div className="bg-white rounded-lg shadow p-6">
