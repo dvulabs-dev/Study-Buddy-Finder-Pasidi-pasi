@@ -1,7 +1,9 @@
 import {useState} from "react";
+import { useNavigate } from "react-router-dom";
 import {searchStudentsBySubject, searchStudentsByAvailability } from "../services/userService";
 
 const StudentSearch = () => {
+ const navigate = useNavigate();
  const [searchType, setSearchType] = useState('simple'); //Simple search by subject or advanced search by subject + availability
  const [subject, setSubject] = useState('');
  const [availableTime, setAvailableTime] = useState({
@@ -76,7 +78,15 @@ const StudentSearch = () => {
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Find Study Buddies</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Find Study Buddies</h2>
+                <button
+                    onClick={() => navigate('/dashboard')}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
+                >
+                    ← Back to Dashboard
+                </button>
+            </div>
 
             {/* Search Type Toggle */}
             <div className="flex gap-4 mb-6">
