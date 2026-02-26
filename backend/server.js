@@ -21,6 +21,11 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/users", require("./routes/user.route"));
+app.use("/api/studygroups", require("./routes/studygroup.routes"));
+app.use("/api/admin", require("./routes/admin.routes"));
+app.use("/api/friends", require("./routes/friend.routes"));
+app.use("/api/group-invites", require("./routes/groupInvite.routes"));
 
 const PORT = process.env.PORT || 5000;
 
