@@ -1,5 +1,14 @@
 import api from './api';
 
+// Get all registered students
+export const getAllStudents = async () => {
+    try {
+        const response = await api.get('/users/all');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
 
 //Search students by subject
 
@@ -22,4 +31,14 @@ export const searchStudentsByAvailability = async(searchData) => {
         throw error.response?.data || error.message;
     }
 
+};
+
+// Update user profile
+export const updateProfile = async (profileData) => {
+    try {
+        const response = await api.put("/users/profile", profileData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
 };

@@ -12,7 +12,11 @@ import {
   EyeSlashIcon,
   AcademicCapIcon,
   BookOpenIcon,
-  UsersIcon
+  UsersIcon,
+  SparklesIcon,
+  GlobeAltIcon,
+  ClockIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 // Import your background image (you can replace this with your own image URL)
@@ -162,11 +166,45 @@ const Signup = () => {
     }
   };
 
+  // Features list for the left panel
+  const features = [
+    {
+      icon: <UsersIcon className="w-6 h-6" />,
+      title: "Find Study Partners",
+      description: "Connect with students who share your academic interests"
+    },
+    {
+      icon: <BookOpenIcon className="w-6 h-6" />,
+      title: "Shared Resources",
+      description: "Access and share study materials, notes, and practice tests"
+    },
+    {
+      icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />,
+      title: "Group Discussions",
+      description: "Join study groups and collaborate in real-time"
+    },
+    {
+      icon: <ClockIcon className="w-6 h-6" />,
+      title: "Smart Scheduling",
+      description: "Coordinate study sessions that work for everyone"
+    },
+    {
+      icon: <GlobeAltIcon className="w-6 h-6" />,
+      title: "Global Community",
+      description: "Connect with learners from around the world"
+    },
+    {
+      icon: <SparklesIcon className="w-6 h-6" />,
+      title: "AI Recommendations",
+      description: "Get personalized study partner suggestions"
+    }
+  ];
+
   return (
-    <div className="h-screen flex items-center justify-center relative overflow-hidden">
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gray-900">
       {/* Background Image with Blur and Overlay */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+        className="absolute inset-0 transition-opacity duration-1000 bg-center bg-no-repeat bg-cover"
         style={{
           backgroundImage: `url(${backgroundImage})`,
           filter: 'blur(8px)',
@@ -175,302 +213,389 @@ const Signup = () => {
       />
       
       {/* Dark Overlay for better contrast */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       
       {/* Animated gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/40 via-purple-900/40 to-pink-800/40 animate-gradient" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/50 via-purple-900/50 to-pink-800/50 animate-gradient" />
 
       {/* Floating study-related icons */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 text-white/10 animate-float-slow">
-          <BookOpenIcon className="h-24 w-24" />
+        <div className="absolute top-20 left-[10%] text-white/10 animate-float-slow">
+          <BookOpenIcon className="w-32 h-32" />
         </div>
-        <div className="absolute bottom-20 right-20 text-white/10 animate-float">
-          <UsersIcon className="h-32 w-32" />
+        <div className="absolute bottom-20 right-[10%] text-white/10 animate-float">
+          <UsersIcon className="w-40 h-40" />
         </div>
-        <div className="absolute top-40 right-40 text-white/10 animate-float-delayed">
-          <AcademicCapIcon className="h-20 w-20" />
+        <div className="absolute top-1/3 right-1/4 text-white/10 animate-float-delayed">
+          <AcademicCapIcon className="w-24 h-24" />
+        </div>
+        <div className="absolute bottom-1/3 left-1/4 text-white/10 animate-float-slow">
+          <ChatBubbleLeftRightIcon className="h-28 w-28" />
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-md w-full relative z-10 px-4 sm:px-6 lg:px-8 py-4">
-        {/* Glassmorphism Card */}
-        <div className="bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-2xl shadow-2xl border border-white/20">
-          {/* Header with icon */}
-          <div className="text-center">
-            <div className="flex justify-center mb-3">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 rounded-2xl shadow-lg">
-                <AcademicCapIcon className="h-10 w-10 text-white" />
+      {/* Main Content - Landscape Two-Column Layout */}
+      <div className="relative z-10 w-full max-w-6xl px-4 py-6 mx-auto sm:px-6 lg:px-8">
+        <div className="grid items-stretch grid-cols-1 gap-6 lg:grid-cols-2">
+          
+          {/* Left Panel - Features/Branding (Hidden on mobile, visible on landscape) */}
+          <div className="hidden lg:block">
+            <div className="flex flex-col h-full p-8 border shadow-2xl bg-white/90 backdrop-blur-xl rounded-2xl border-white/20">
+              {/* Brand Header */}
+              <div className="flex items-center mb-8 space-x-3">
+                <div className="p-3 shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl">
+                  <AcademicCapIcon className="w-10 h-10 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text">
+                    Study Buddy Finder
+                  </h1>
+                  <p className="text-sm text-gray-600">Learn together, grow together</p>
+                </div>
+              </div>
+
+              {/* Welcome Message */}
+              <div className="mb-8">
+                <h2 className="mb-3 text-3xl font-bold text-gray-800">
+                  Join Our Learning Community
+                </h2>
+                <p className="leading-relaxed text-gray-600">
+                  Thousands of students are already connecting, sharing knowledge, 
+                  and achieving their academic goals together. Be part of something bigger.
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="p-3 text-center rounded-lg bg-indigo-50/50">
+                  <div className="text-2xl font-bold text-indigo-600">10k+</div>
+                  <div className="text-xs text-gray-600">Active Students</div>
+                </div>
+                <div className="p-3 text-center rounded-lg bg-purple-50/50">
+                  <div className="text-2xl font-bold text-purple-600">500+</div>
+                  <div className="text-xs text-gray-600">Study Groups</div>
+                </div>
+                <div className="p-3 text-center rounded-lg bg-pink-50/50">
+                  <div className="text-2xl font-bold text-pink-600">50+</div>
+                  <div className="text-xs text-gray-600">Universities</div>
+                </div>
+              </div>
+
+              {/* Features Grid */}
+              <div className="grid flex-grow grid-cols-2 gap-4">
+                {features.map((feature, index) => (
+                  <div 
+                    key={index}
+                    className="p-3 transition-all duration-200 rounded-lg cursor-default bg-white/50 hover:bg-white/80 group"
+                  >
+                    <div className="mb-2 text-indigo-600 transition-transform duration-200 group-hover:scale-110">
+                      {feature.icon}
+                    </div>
+                    <h3 className="mb-1 text-sm font-semibold text-gray-800">
+                      {feature.title}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      {feature.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Testimonial */}
+              <div className="p-4 mt-6 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50">
+                <p className="text-sm italic text-gray-700">
+                  "Found my perfect study partner within days. My grades have improved significantly!"
+                </p>
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full bg-gradient-to-r from-indigo-600 to-purple-600">
+                    SJ
+                  </div>
+                  <div className="ml-2">
+                    <p className="text-xs font-semibold text-gray-800">Sarah Johnson</p>
+                    <p className="text-xs text-gray-600">Computer Science Student</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <h2 className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Study Buddy Finder
-            </h2>
-            <p className="mt-1 text-sm text-gray-600">
-              Join our community of learners and achievers
-            </p>
           </div>
 
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-            {/* Error message with animation */}
-            {error && (
-              <div className="bg-red-50/90 backdrop-blur-sm border-l-4 border-red-500 text-red-700 px-4 py-2 rounded-lg shadow-md animate-slideDown">
-                <div className="flex items-center">
-                  <XCircleIcon className="h-5 w-5 mr-2 text-red-500 flex-shrink-0" />
-                  <p className="text-sm">{error}</p>
+          {/* Right Panel - Signup Form */}
+          <div className="p-6 border shadow-2xl bg-white/90 backdrop-blur-xl sm:p-8 rounded-2xl border-white/20">
+            {/* Header with icon - Mobile visible */}
+            <div className="text-center lg:text-left">
+              <div className="flex justify-center mb-3 lg:justify-start">
+                <div className="p-3 shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl lg:hidden">
+                  <AcademicCapIcon className="w-10 h-10 text-white" />
                 </div>
               </div>
-            )}
-
-            <div className="space-y-3">
-              {/* Name field */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <UserIcon className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                  </div>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('name')}
-                    className={`appearance-none block w-full pl-10 pr-3 py-2 border ${
-                      touchedFields.name && formData.name.length < 2
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
-                    } rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 transition-all duration-200 bg-white/50 backdrop-blur-sm`}
-                    placeholder="John Doe"
-                  />
-                </div>
-                {touchedFields.name && formData.name.length < 2 && formData.name.length > 0 && (
-                  <p className="mt-1 text-xs text-red-600 animate-fadeIn">Name must be at least 2 characters</p>
-                )}
-              </div>
-
-              {/* Email field */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('email')}
-                    className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                    placeholder="you@example.com"
-                  />
-                </div>
-              </div>
-
-              {/* Password field */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1">
-                  Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <LockClosedIcon className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm"
-                    placeholder="Create a password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                    )}
-                  </button>
-                </div>
-
-                {/* Password strength meter */}
-                {formData.password.length > 0 && (
-                  <div className="mt-2 space-y-2 animate-slideDown">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`}
-                          style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
-                        ></div>
-                      </div>
-                      <span className="ml-2 text-xs font-medium text-gray-600">
-                        {getPasswordStrengthText()}
-                      </span>
-                    </div>
-
-                    {/* Password requirements checklist */}
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-white/50 backdrop-blur-sm p-3 rounded-lg">
-                      <div className="flex items-center">
-                        {passwordStrength.hasMinLength ? (
-                          <CheckCircleIcon className="h-4 w-4 text-green-500 mr-1 flex-shrink-0" />
-                        ) : (
-                          <XCircleIcon className="h-4 w-4 text-gray-300 mr-1 flex-shrink-0" />
-                        )}
-                        <span className={passwordStrength.hasMinLength ? 'text-green-700' : 'text-gray-500'}>
-                          Min. 6 chars
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        {passwordStrength.hasUpperCase ? (
-                          <CheckCircleIcon className="h-4 w-4 text-green-500 mr-1 flex-shrink-0" />
-                        ) : (
-                          <XCircleIcon className="h-4 w-4 text-gray-300 mr-1 flex-shrink-0" />
-                        )}
-                        <span className={passwordStrength.hasUpperCase ? 'text-green-700' : 'text-gray-500'}>
-                          Uppercase
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        {passwordStrength.hasLowerCase ? (
-                          <CheckCircleIcon className="h-4 w-4 text-green-500 mr-1 flex-shrink-0" />
-                        ) : (
-                          <XCircleIcon className="h-4 w-4 text-gray-300 mr-1 flex-shrink-0" />
-                        )}
-                        <span className={passwordStrength.hasLowerCase ? 'text-green-700' : 'text-gray-500'}>
-                          Lowercase
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        {passwordStrength.hasNumber ? (
-                          <CheckCircleIcon className="h-4 w-4 text-green-500 mr-1 flex-shrink-0" />
-                        ) : (
-                          <XCircleIcon className="h-4 w-4 text-gray-300 mr-1 flex-shrink-0" />
-                        )}
-                        <span className={passwordStrength.hasNumber ? 'text-green-700' : 'text-gray-500'}>
-                          Number
-                        </span>
-                      </div>
-                      <div className="flex items-center col-span-2">
-                        {passwordStrength.hasSpecialChar ? (
-                          <CheckCircleIcon className="h-4 w-4 text-green-500 mr-1 flex-shrink-0" />
-                        ) : (
-                          <XCircleIcon className="h-4 w-4 text-gray-300 mr-1 flex-shrink-0" />
-                        )}
-                        <span className={passwordStrength.hasSpecialChar ? 'text-green-700' : 'text-gray-500'}>
-                          Special character (!@#$%^&*)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Confirm Password field */}
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <LockClosedIcon className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className={`appearance-none block w-full pl-10 pr-10 py-2 border ${
-                      formData.confirmPassword && formData.password !== formData.confirmPassword
-                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
-                    } rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 transition-all duration-200 bg-white/50 backdrop-blur-sm`}
-                    placeholder="Confirm your password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                    )}
-                  </button>
-                </div>
-                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p className="mt-1 text-xs text-red-600 animate-fadeIn">Passwords do not match</p>
-                )}
-              </div>
-            </div>
-
-            {/* Submit button */}
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:from-indigo-400 disabled:to-purple-400 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
-              >
-                {loading ? (
-                  <div className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating account...
-                  </div>
-                ) : (
-                  "Create Account"
-                )}
-              </button>
-            </div>
-
-            {/* Sign in link */}
-            <div className="text-center">
-              <p className="text-sm text-gray-600">
-                Already have an account?{" "}
-                <Link
-                  to="/login"
-                  className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200 hover:underline"
-                >
-                  Sign in here
-                </Link>
+              <h2 className="text-2xl font-extrabold text-transparent lg:text-3xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text">
+                Create Account
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Join our community of learners and achievers
               </p>
             </div>
 
-            {/* Terms and conditions */}
-            <div className="text-center text-xs text-gray-500">
-              By creating an account, you agree to our{" "}
-              <a href="/terms" className="text-indigo-600 hover:text-indigo-500 hover:underline">
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="/privacy" className="text-indigo-600 hover:text-indigo-500 hover:underline">
-                Privacy Policy
-              </a>
-            </div>
-          </form>
+            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+              {/* Error message with animation */}
+              {error && (
+                <div className="px-4 py-2 text-red-700 border-l-4 border-red-500 rounded-lg shadow-md bg-red-50/90 backdrop-blur-sm animate-slideDown">
+                  <div className="flex items-center">
+                    <XCircleIcon className="flex-shrink-0 w-5 h-5 mr-2 text-red-500" />
+                    <p className="text-sm">{error}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {/* Name field */}
+                <div>
+                  <label htmlFor="name" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Full Name
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <UserIcon className="w-5 h-5 text-gray-400 transition-colors group-focus-within:text-indigo-500" />
+                    </div>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur('name')}
+                      className={`appearance-none block w-full pl-10 pr-3 py-2.5 border ${
+                        touchedFields.name && formData.name.length < 2
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+                      } rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 transition-all duration-200 bg-white/50 backdrop-blur-sm`}
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  {touchedFields.name && formData.name.length < 2 && formData.name.length > 0 && (
+                    <p className="mt-1 text-xs text-red-600 animate-fadeIn">Name must be at least 2 characters</p>
+                  )}
+                </div>
+
+                {/* Email field */}
+                <div>
+                  <label htmlFor="email" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Email Address
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <EnvelopeIcon className="w-5 h-5 text-gray-400 transition-colors group-focus-within:text-indigo-500" />
+                    </div>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur('email')}
+                      className="appearance-none block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                </div>
+
+                {/* Password field */}
+                <div>
+                  <label htmlFor="password" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Password
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <LockClosedIcon className="w-5 h-5 text-gray-400 transition-colors group-focus-within:text-indigo-500" />
+                    </div>
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="appearance-none block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                      placeholder="Create a password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    >
+                      {showPassword ? (
+                        <EyeSlashIcon className="w-5 h-5 text-gray-400 transition-colors hover:text-gray-600" />
+                      ) : (
+                        <EyeIcon className="w-5 h-5 text-gray-400 transition-colors hover:text-gray-600" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Password strength meter */}
+                  {formData.password.length > 0 && (
+                    <div className="mt-2 space-y-2 animate-slideDown">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 h-2 overflow-hidden bg-gray-200 rounded-full">
+                          <div
+                            className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`}
+                            style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 text-xs font-medium text-gray-600">
+                          {getPasswordStrengthText()}
+                        </span>
+                      </div>
+
+                      {/* Password requirements checklist - Compact for landscape */}
+                      <div className="grid grid-cols-2 gap-2 p-2 text-xs rounded-lg bg-white/50 backdrop-blur-sm">
+                        <div className="flex items-center">
+                          {passwordStrength.hasMinLength ? (
+                            <CheckCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-green-500" />
+                          ) : (
+                            <XCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-gray-300" />
+                          )}
+                          <span className={passwordStrength.hasMinLength ? 'text-green-700' : 'text-gray-500'}>
+                            6+ chars
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          {passwordStrength.hasUpperCase ? (
+                            <CheckCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-green-500" />
+                          ) : (
+                            <XCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-gray-300" />
+                          )}
+                          <span className={passwordStrength.hasUpperCase ? 'text-green-700' : 'text-gray-500'}>
+                            A-Z
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          {passwordStrength.hasLowerCase ? (
+                            <CheckCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-green-500" />
+                          ) : (
+                            <XCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-gray-300" />
+                          )}
+                          <span className={passwordStrength.hasLowerCase ? 'text-green-700' : 'text-gray-500'}>
+                            a-z
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          {passwordStrength.hasNumber ? (
+                            <CheckCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-green-500" />
+                          ) : (
+                            <XCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-gray-300" />
+                          )}
+                          <span className={passwordStrength.hasNumber ? 'text-green-700' : 'text-gray-500'}>
+                            0-9
+                          </span>
+                        </div>
+                        <div className="flex items-center col-span-2">
+                          {passwordStrength.hasSpecialChar ? (
+                            <CheckCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-green-500" />
+                          ) : (
+                            <XCircleIcon className="flex-shrink-0 w-3 h-3 mr-1 text-gray-300" />
+                          )}
+                          <span className={passwordStrength.hasSpecialChar ? 'text-green-700' : 'text-gray-500'}>
+                            Special char (!@#$%^&*)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirm Password field */}
+                <div>
+                  <label htmlFor="confirmPassword" className="block mb-1 text-sm font-semibold text-gray-700">
+                    Confirm Password
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <LockClosedIcon className="w-5 h-5 text-gray-400 transition-colors group-focus-within:text-indigo-500" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full pl-10 pr-10 py-2.5 border ${
+                        formData.confirmPassword && formData.password !== formData.confirmPassword
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+                      } rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 transition-all duration-200 bg-white/50 backdrop-blur-sm`}
+                      placeholder="Confirm your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeSlashIcon className="w-5 h-5 text-gray-400 transition-colors hover:text-gray-600" />
+                      ) : (
+                        <EyeIcon className="w-5 h-5 text-gray-400 transition-colors hover:text-gray-600" />
+                      )}
+                    </button>
+                  </div>
+                  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                    <p className="mt-1 text-xs text-red-600 animate-fadeIn">Passwords do not match</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit button */}
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group relative w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:from-indigo-400 disabled:to-purple-400 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  {loading ? (
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-3 -ml-1 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creating account...
+                    </div>
+                  ) : (
+                    "Create Account"
+                  )}
+                </button>
+              </div>
+
+              {/* Sign in link */}
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{" "}
+                  <Link
+                    to="/login"
+                    className="font-semibold text-indigo-600 transition-colors duration-200 hover:text-indigo-500 hover:underline"
+                  >
+                    Sign in here
+                  </Link>
+                </p>
+              </div>
+
+              {/* Terms and conditions */}
+              <div className="text-xs text-center text-gray-500">
+                By creating an account, you agree to our{" "}
+                <a href="/terms" className="text-indigo-600 hover:text-indigo-500 hover:underline">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="/privacy" className="text-indigo-600 hover:text-indigo-500 hover:underline">
+                  Privacy Policy
+                </a>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 
