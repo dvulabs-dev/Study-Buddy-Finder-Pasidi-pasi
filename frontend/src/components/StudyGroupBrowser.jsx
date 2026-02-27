@@ -173,20 +173,20 @@ const StudyGroupBrowser = () => {
     // Get gradient based on subject
     const getSubjectGradient = (subject) => {
         const gradients = {
-            'Math': 'from-blue-600 to-cyan-600',
-            'Physics': 'from-blue-500 to-indigo-500',
-            'Chemistry': 'from-cyan-600 to-blue-600',
-            'Biology': 'from-sky-600 to-blue-600',
-            'Computer Science': 'from-blue-700 to-indigo-700',
-            'History': 'from-slate-600 to-blue-600',
-            'English': 'from-indigo-500 to-blue-500',
-            'default': 'from-blue-600 to-cyan-600'
+            'Math': 'from-blue-500 to-cyan-500',
+            'Physics': 'from-purple-500 to-pink-500',
+            'Chemistry': 'from-green-500 to-emerald-500',
+            'Biology': 'from-teal-500 to-green-500',
+            'Computer Science': 'from-indigo-500 to-purple-500',
+            'History': 'from-amber-500 to-orange-500',
+            'English': 'from-pink-500 to-rose-500',
+            'default': 'from-indigo-500 to-purple-500'
         };
         return gradients[subject] || gradients.default;
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
             {/* Animated Background */}
             <div 
                 className="fixed inset-0 opacity-5"
@@ -200,9 +200,9 @@ const StudyGroupBrowser = () => {
             
             {/* Floating Particles */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute w-64 h-64 rounded-full top-20 left-20 bg-blue-500/10 blur-3xl animate-pulse"></div>
-                <div className="absolute delay-1000 rounded-full bottom-20 right-20 w-96 h-96 bg-cyan-500/10 blur-3xl animate-pulse"></div>
-                <div className="absolute w-48 h-48 rounded-full top-1/3 right-1/3 bg-sky-500/10 blur-3xl animate-pulse delay-2000"></div>
+                <div className="absolute w-64 h-64 rounded-full top-20 left-20 bg-purple-500/10 blur-3xl animate-pulse"></div>
+                <div className="absolute delay-1000 rounded-full bottom-20 right-20 w-96 h-96 bg-blue-500/10 blur-3xl animate-pulse"></div>
+                <div className="absolute w-48 h-48 rounded-full top-1/3 right-1/3 bg-pink-500/10 blur-3xl animate-pulse delay-2000"></div>
             </div>
 
             <div className="relative px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -229,7 +229,7 @@ const StudyGroupBrowser = () => {
                                 onClick={() => setViewMode("grid")}
                                 className={`px-4 py-2 rounded-xl transition-all ${
                                     viewMode === "grid" 
-                                        ? 'bg-blue-600 text-white' 
+                                        ? 'bg-indigo-600 text-white' 
                                         : 'text-white/60 hover:text-white'
                                 }`}
                             >
@@ -239,7 +239,7 @@ const StudyGroupBrowser = () => {
                                 onClick={() => setViewMode("list")}
                                 className={`px-4 py-2 rounded-xl transition-all ${
                                     viewMode === "list" 
-                                        ? 'bg-blue-600 text-white' 
+                                        ? 'bg-indigo-600 text-white' 
                                         : 'text-white/60 hover:text-white'
                                 }`}
                             >
@@ -250,7 +250,7 @@ const StudyGroupBrowser = () => {
                         {/* Create Group Button */}
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="relative flex items-center px-6 py-3 space-x-2 overflow-hidden font-semibold text-white transition-all group bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl hover:shadow-xl hover:scale-105"
+                            className="relative flex items-center px-6 py-3 space-x-2 overflow-hidden font-semibold text-white transition-all group bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl hover:shadow-xl hover:scale-105"
                         >
                             <div className="absolute inset-0 transition-transform translate-y-full bg-white/20 group-hover:translate-y-0"></div>
                             <PlusIcon className="relative z-10 w-5 h-5" />
@@ -276,7 +276,7 @@ const StudyGroupBrowser = () => {
                                 }}
                                 className={`group relative px-6 py-3 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                                     searchType === type.id
-                                        ? 'bg-blue-600 text-white shadow-lg'
+                                        ? 'bg-indigo-600 text-white shadow-lg'
                                         : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                                 }`}
                             >
@@ -299,14 +299,14 @@ const StudyGroupBrowser = () => {
                                         placeholder="Enter subject (e.g. Mathematics, Physics, Computer Science)"
                                         value={subject}
                                         onChange={(e) => setSubject(e.target.value)}
-                                        className="w-full py-4 text-white transition-all border pl-14 pr-36 bg-white/5 border-white/20 rounded-2xl placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full py-4 text-white transition-all border pl-14 pr-36 bg-white/5 border-white/20 rounded-2xl placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                     />
-                                    <MagnifyingGlassIcon className="absolute w-5 h-5 transition-colors left-5 top-4 text-white/40 group-focus-within:text-blue-400" />
+                                    <MagnifyingGlassIcon className="absolute w-5 h-5 transition-colors left-5 top-4 text-white/40 group-focus-within:text-indigo-400" />
                                     <div className="absolute flex space-x-2 right-3 top-3">
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="px-6 py-2 font-medium text-white transition-all bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50"
+                                            className="px-6 py-2 font-medium text-white transition-all bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:opacity-50"
                                         >
                                             {loading ? "Searching..." : "Search"}
                                         </button>
@@ -327,7 +327,7 @@ const StudyGroupBrowser = () => {
                                         placeholder="Any subject"
                                         value={subject}
                                         onChange={(e) => setSubject(e.target.value)}
-                                        className="w-full px-5 py-3 text-white border bg-white/5 border-white/20 rounded-xl placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-5 py-3 text-white border bg-white/5 border-white/20 rounded-xl placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     />
                                 </div>
 
@@ -349,7 +349,7 @@ const StudyGroupBrowser = () => {
                                                 onClick={() => handleCheckboxChange(item.id)}
                                                 className={`group p-4 rounded-xl border transition-all flex flex-col items-center space-y-2 ${
                                                     meetingTime[item.id]
-                                                        ? 'bg-blue-600 border-blue-400 text-white'
+                                                        ? 'bg-indigo-600 border-indigo-400 text-white'
                                                         : 'bg-white/5 border-white/20 text-white/60 hover:bg-white/10 hover:text-white'
                                                 }`}
                                             >
@@ -365,7 +365,7 @@ const StudyGroupBrowser = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="flex-1 px-6 py-3 font-semibold text-white transition-all bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl hover:shadow-lg disabled:opacity-50"
+                                        className="flex-1 px-6 py-3 font-semibold text-white transition-all bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:shadow-lg disabled:opacity-50"
                                     >
                                         {loading ? "Searching..." : "Apply Filters"}
                                     </button>
@@ -400,7 +400,7 @@ const StudyGroupBrowser = () => {
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className="px-4 py-2 text-sm text-white border bg-white/10 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-4 py-2 text-sm text-white border bg-white/10 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
                             <option value="popular">Most Popular</option>
                             <option value="newest">Newest First</option>
@@ -421,9 +421,9 @@ const StudyGroupBrowser = () => {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20">
                         <div className="relative">
-                            <div className="w-20 h-20 border-4 rounded-full border-blue-500/30 border-t-blue-500 animate-spin"></div>
+                            <div className="w-20 h-20 border-4 rounded-full border-indigo-500/30 border-t-indigo-500 animate-spin"></div>
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 animate-pulse"></div>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 animate-pulse"></div>
                             </div>
                         </div>
                         <p className="mt-4 text-white/60">Loading study groups...</p>
@@ -562,8 +562,8 @@ const StudyGroupBrowser = () => {
                                 </div>
 
                                 {/* Hover Effect Border */}
-                                <div className={`absolute inset-0 border-2 border-blue-500/0 rounded-3xl transition-all duration-300 ${
-                                    hoveredGroup === group._id ? 'border-blue-500/50' : ''
+                                <div className={`absolute inset-0 border-2 border-indigo-500/0 rounded-3xl transition-all duration-300 ${
+                                    hoveredGroup === group._id ? 'border-indigo-500/50' : ''
                                 }`}></div>
                             </div>
                         ))}
@@ -571,7 +571,7 @@ const StudyGroupBrowser = () => {
                 ) : (
                     <div className="p-12 text-center border bg-white/10 backdrop-blur-xl rounded-3xl border-white/20">
                         <div className="max-w-md mx-auto">
-                            <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-3xl">
+                            <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl">
                                 <UserGroupIcon className="w-12 h-12 text-white" />
                             </div>
                             <h3 className="mb-3 text-2xl font-bold text-white">No Groups Found</h3>
@@ -582,7 +582,7 @@ const StudyGroupBrowser = () => {
                             </p>
                             <button
                                 onClick={() => setShowCreateModal(true)}
-                                className="inline-flex items-center px-8 py-4 space-x-2 font-semibold text-white transition-all bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl hover:shadow-xl"
+                                className="inline-flex items-center px-8 py-4 space-x-2 font-semibold text-white transition-all bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:shadow-xl"
                             >
                                 <PlusIcon className="w-5 h-5" />
                                 <span>Create Your Group</span>
@@ -601,89 +601,114 @@ const StudyGroupBrowser = () => {
 
             {/* Group Details Modal */}
             {selectedGroup && (
-                <div 
+                <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                     onClick={() => setSelectedGroup(null)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="sg-details-title"
                 >
-                    <div 
-                        className="relative w-full max-w-2xl p-8 border bg-white/10 backdrop-blur-2xl rounded-3xl border-white/20 animate-slideDown"
+                    <div
+                        className="relative w-full max-w-3xl border bg-white/10 backdrop-blur-2xl rounded-3xl border-white/20 animate-slideDown max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button
-                            onClick={() => setSelectedGroup(null)}
-                            className="absolute p-2 transition-all top-4 right-4 bg-white/10 rounded-xl hover:bg-white/20"
-                        >
-                            <XMarkIcon className="w-5 h-5 text-white" />
-                        </button>
+                        <div className="sticky top-0 z-10 px-6 py-5 border-b bg-black/20 backdrop-blur-2xl border-white/10 rounded-t-3xl">
+                            <button
+                                onClick={() => setSelectedGroup(null)}
+                                className="absolute p-2 transition-all top-4 right-4 bg-white/10 rounded-xl hover:bg-white/20"
+                                aria-label="Close"
+                            >
+                                <XMarkIcon className="w-5 h-5 text-white" />
+                            </button>
 
-                        <div className="mb-6">
                             <div className={`inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r ${
                                 getSubjectGradient(selectedGroup.subject)
-                            } text-white text-xs font-medium mb-3`}>
+                            } text-white text-xs font-medium`}> 
                                 <AcademicCapIcon className="w-3 h-3 mr-1" />
                                 {selectedGroup.subject}
                             </div>
-                            <h2 className="mb-2 text-2xl font-bold text-white">{selectedGroup.name}</h2>
-                            <p className="text-white/70">{selectedGroup.description}</p>
+
+                            <h2 id="sg-details-title" className="mt-3 text-2xl font-bold text-white">
+                                {selectedGroup.name}
+                            </h2>
+
+                            {selectedGroup.description ? (
+                                <p className="mt-2 text-white/70">{selectedGroup.description}</p>
+                            ) : (
+                                <p className="mt-2 text-white/50">No description provided.</p>
+                            )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="p-4 bg-white/5 rounded-xl">
-                                <UsersIcon className="w-5 h-5 mb-2 text-blue-400" />
-                                <p className="text-sm text-white/60">Members</p>
-                                <p className="text-lg font-bold text-white">
-                                    {selectedGroup.members?.length || 0}/{selectedGroup.maxMembers}
-                                </p>
-                            </div>
-                            <div className="p-4 bg-white/5 rounded-xl">
-                                <UserGroupIcon className="w-5 h-5 mb-2 text-cyan-400" />
-                                <p className="text-sm text-white/60">Created by</p>
-                                <p className="text-lg font-bold text-white">{selectedGroup.creator?.name || "Unknown"}</p>
-                            </div>
-                        </div>
-
-                        {selectedGroup.meetingTime && (
-                            <div className="mb-6">
-                                <h3 className="mb-3 font-semibold text-white">Meeting Schedule</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedGroup.meetingTime.weekdays && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <CalendarIcon className="w-4 h-4 mr-2" />
-                                            Weekdays
-                                        </span>
-                                    )}
-                                    {selectedGroup.meetingTime.weekend && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <CalendarIcon className="w-4 h-4 mr-2" />
-                                            Weekend
-                                        </span>
-                                    )}
-                                    {selectedGroup.meetingTime.morning && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <ClockIcon className="w-4 h-4 mr-2" />
-                                            Morning
-                                        </span>
-                                    )}
-                                    {selectedGroup.meetingTime.evening && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <ClockIcon className="w-4 h-4 mr-2" />
-                                            Evening
-                                        </span>
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                                    <UsersIcon className="w-5 h-5 mb-2 text-indigo-400" />
+                                    <p className="text-sm text-white/60">Members</p>
+                                    <p className="text-lg font-bold text-white">
+                                        {selectedGroup.members?.length || 0}/{selectedGroup.maxMembers}
+                                    </p>
+                                </div>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                                    <UserGroupIcon className="w-5 h-5 mb-2 text-purple-400" />
+                                    <p className="text-sm text-white/60">Created by</p>
+                                    <p className="text-lg font-bold text-white">{selectedGroup.creator?.name || "Unknown"}</p>
+                                    {selectedGroup.creator?.email && (
+                                        <p className="text-xs text-white/50 mt-1 break-words">{selectedGroup.creator.email}</p>
                                     )}
                                 </div>
                             </div>
-                        )}
 
-                        <button
-                            onClick={() => {
-                                handleJoinGroup(selectedGroup._id);
-                                setSelectedGroup(null);
-                            }}
-                            disabled={joinLoading === selectedGroup._id}
-                            className="w-full px-6 py-4 font-semibold text-white transition-all bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl hover:shadow-xl"
-                        >
-                            {joinLoading === selectedGroup._id ? "Joining..." : "Join This Group"}
-                        </button>
+                            {selectedGroup.meetingTime && (
+                                <div className="mb-6">
+                                    <h3 className="mb-3 font-semibold text-white">Meeting Schedule</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedGroup.meetingTime.weekdays && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <CalendarIcon className="w-4 h-4 mr-2" />
+                                                Weekdays
+                                            </span>
+                                        )}
+                                        {selectedGroup.meetingTime.weekend && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <CalendarIcon className="w-4 h-4 mr-2" />
+                                                Weekend
+                                            </span>
+                                        )}
+                                        {selectedGroup.meetingTime.morning && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <ClockIcon className="w-4 h-4 mr-2" />
+                                                Morning
+                                            </span>
+                                        )}
+                                        {selectedGroup.meetingTime.evening && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <ClockIcon className="w-4 h-4 mr-2" />
+                                                Evening
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <button
+                                    onClick={() => setSelectedGroup(null)}
+                                    className="w-full sm:w-1/3 px-6 py-4 font-semibold text-white/80 transition-all bg-white/10 rounded-xl hover:bg-white/15 border border-white/10"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        handleJoinGroup(selectedGroup._id);
+                                        setSelectedGroup(null);
+                                    }}
+                                    disabled={joinLoading === selectedGroup._id}
+                                    className="w-full sm:flex-1 px-6 py-4 font-semibold text-white transition-all bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {joinLoading === selectedGroup._id ? "Joining..." : "Join This Group"}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

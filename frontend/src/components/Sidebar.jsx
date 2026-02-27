@@ -24,7 +24,7 @@ const Sidebar = ({
   return (
     <>
       {/* ─── Desktop Sidebar ─── */}
-      <div className="fixed top-0 left-0 hidden h-full bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700 shadow-xl w-72 lg:block">
+      <div className="fixed top-0 left-0 hidden h-full border-r shadow-xl bg-gradient-to-b from-slate-900 to-slate-800 border-slate-700 w-72 lg:block">
         <div className="flex flex-col h-full p-6">
           {/* Logo */}
           <div className="flex items-center mb-8 space-x-3">
@@ -38,16 +38,16 @@ const Sidebar = ({
           </div>
 
           {/* User Card */}
-          <div className="p-4 mb-6 bg-slate-800/50 border border-slate-700 backdrop-blur-sm rounded-2xl hover:bg-slate-800 transition-all duration-300">
+          <div className="p-4 mb-6 transition-all duration-300 border bg-slate-800/50 border-slate-700 backdrop-blur-sm rounded-2xl hover:bg-slate-800">
             <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-12 h-12 text-sm font-bold text-white bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg shadow-indigo-500/30">
+              <div className="flex items-center justify-center w-12 h-12 text-sm font-bold text-white shadow-lg bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-indigo-500/30">
                 {getInitials(user?.name)}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-white truncate">
                   {user?.name || "Student"}
                 </p>
-                <p className="text-xs text-slate-400 truncate">
+                <p className="text-xs truncate text-slate-400">
                   {user?.degree || "Student"}{" "}
                   {user?.year ? `• Year ${user.year}` : ""}
                 </p>
@@ -98,17 +98,17 @@ const Sidebar = ({
           </nav>
 
           {/* Bottom stats */}
-          <div className="p-4 bg-slate-800/50 border border-slate-700 backdrop-blur-sm rounded-2xl">
+          <div className="p-4 border bg-slate-800/50 border-slate-700 backdrop-blur-sm rounded-2xl">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <p className="text-xs text-slate-400 mb-1">My Groups</p>
+                <p className="mb-1 text-xs text-slate-400">My Groups</p>
                 <p className="text-2xl font-bold text-white">
                   {myGroupsList.length}
                 </p>
                 <div className="w-8 h-0.5 bg-indigo-500/50 mx-auto mt-1 rounded-full"></div>
               </div>
               <div className="text-center">
-                <p className="text-xs text-slate-400 mb-1">Friends</p>
+                <p className="mb-1 text-xs text-slate-400">Friends</p>
                 <p className="text-2xl font-bold text-white">
                   {myFriendsList.length}
                 </p>
@@ -120,8 +120,8 @@ const Sidebar = ({
       </div>
 
       {/* ─── Mobile Bottom Nav ─── */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-slate-900 to-slate-800 border-t border-slate-700 shadow-lg lg:hidden">
-        <div className="flex justify-around py-2 px-1">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t shadow-lg bg-gradient-to-t from-slate-900 to-slate-800 border-slate-700 lg:hidden">
+        <div className="flex justify-around px-1 py-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
