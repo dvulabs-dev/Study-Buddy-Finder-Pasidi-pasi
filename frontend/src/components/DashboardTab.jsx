@@ -53,20 +53,48 @@ const DashboardTab = ({
         </div>
       )}
 
-      {/* Welcome */}
-      <div className="p-6 mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl lg:p-8">
-        <span className="inline-block px-3 py-1 mb-3 text-xs font-medium text-indigo-100 rounded-full bg-white/20">Welcome back</span>
-        <h2 className="mb-2 text-2xl font-bold text-white lg:text-3xl">{greeting}, {user?.name?.split(" ")[0] || "Student"}!</h2>
-        <p className="mb-6 text-indigo-100">
-          {myGroupsList.length > 0 ? `You are part of ${myGroupsList.length} study group${myGroupsList.length > 1 ? "s" : ""}. Keep learning!` : "Join a study group or find study buddies to start collaborating."}
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <button onClick={() => setActiveTab("studygroups")} className="flex items-center px-5 py-2.5 space-x-2 font-semibold text-indigo-700 bg-white rounded-xl hover:shadow-lg transition-all">
-            <UserGroupIcon className="w-5 h-5" /><span>Browse Groups</span>
-          </button>
-          <button onClick={() => setActiveTab("findbuddies")} className="flex items-center px-5 py-2.5 space-x-2 font-semibold text-white border border-white/30 rounded-xl hover:bg-white/10 transition-all">
-            <MagnifyingGlassIcon className="w-5 h-5" /><span>Find Buddies</span>
-          </button>
+     {/* Welcome Section with Realistic Image */}
+      <div className="relative overflow-hidden rounded-3xl h-[280px] lg:h-[320px] group">
+        {/* Background Image */}
+        <img 
+          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&q=80" 
+          alt="Students studying together"
+          className="absolute inset-0 object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"
+        />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-800/90 to-transparent" />
+        
+        {/* Content */}
+        <div className="absolute inset-0 flex items-center p-8 lg:p-12">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-3 py-1 text-xs font-semibold text-white border rounded-full bg-white/20 backdrop-blur-sm border-white/30">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </span>
+            </div>
+            <h1 className="mb-3 text-3xl font-bold text-white lg:text-4xl">
+              {greeting}, {user?.name?.split(" ")[0] || "Student"}!
+            </h1>
+            <p className="mb-6 text-lg text-white/90">
+              Ready for another productive day? You have {myGroupsList.length} active groups and {pendingRequests.length} pending requests.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button 
+                onClick={() => setActiveTab("studygroups")}
+                className="flex items-center gap-2 px-6 py-3 font-semibold text-white transition-all bg-indigo-600 rounded-xl hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/25"
+              >
+                <UserGroupIcon className="w-5 h-5" />
+                Browse Groups
+              </button>
+              <button 
+                onClick={() => setActiveTab("findbuddies")}
+                className="flex items-center gap-2 px-6 py-3 font-semibold text-white transition-all border bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 border-white/30"
+              >
+                <MagnifyingGlassIcon className="w-5 h-5" />
+                Find Buddies
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -601,89 +601,114 @@ const StudyGroupBrowser = () => {
 
             {/* Group Details Modal */}
             {selectedGroup && (
-                <div 
+                <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                     onClick={() => setSelectedGroup(null)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="sg-details-title"
                 >
-                    <div 
-                        className="relative w-full max-w-2xl p-8 border bg-white/10 backdrop-blur-2xl rounded-3xl border-white/20 animate-slideDown"
+                    <div
+                        className="relative w-full max-w-3xl border bg-white/10 backdrop-blur-2xl rounded-3xl border-white/20 animate-slideDown max-h-[90vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button
-                            onClick={() => setSelectedGroup(null)}
-                            className="absolute p-2 transition-all top-4 right-4 bg-white/10 rounded-xl hover:bg-white/20"
-                        >
-                            <XMarkIcon className="w-5 h-5 text-white" />
-                        </button>
+                        <div className="sticky top-0 z-10 px-6 py-5 border-b bg-black/20 backdrop-blur-2xl border-white/10 rounded-t-3xl">
+                            <button
+                                onClick={() => setSelectedGroup(null)}
+                                className="absolute p-2 transition-all top-4 right-4 bg-white/10 rounded-xl hover:bg-white/20"
+                                aria-label="Close"
+                            >
+                                <XMarkIcon className="w-5 h-5 text-white" />
+                            </button>
 
-                        <div className="mb-6">
                             <div className={`inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r ${
                                 getSubjectGradient(selectedGroup.subject)
-                            } text-white text-xs font-medium mb-3`}>
+                            } text-white text-xs font-medium`}> 
                                 <AcademicCapIcon className="w-3 h-3 mr-1" />
                                 {selectedGroup.subject}
                             </div>
-                            <h2 className="mb-2 text-2xl font-bold text-white">{selectedGroup.name}</h2>
-                            <p className="text-white/70">{selectedGroup.description}</p>
+
+                            <h2 id="sg-details-title" className="mt-3 text-2xl font-bold text-white">
+                                {selectedGroup.name}
+                            </h2>
+
+                            {selectedGroup.description ? (
+                                <p className="mt-2 text-white/70">{selectedGroup.description}</p>
+                            ) : (
+                                <p className="mt-2 text-white/50">No description provided.</p>
+                            )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="p-4 bg-white/5 rounded-xl">
-                                <UsersIcon className="w-5 h-5 mb-2 text-indigo-400" />
-                                <p className="text-sm text-white/60">Members</p>
-                                <p className="text-lg font-bold text-white">
-                                    {selectedGroup.members?.length || 0}/{selectedGroup.maxMembers}
-                                </p>
-                            </div>
-                            <div className="p-4 bg-white/5 rounded-xl">
-                                <UserGroupIcon className="w-5 h-5 mb-2 text-purple-400" />
-                                <p className="text-sm text-white/60">Created by</p>
-                                <p className="text-lg font-bold text-white">{selectedGroup.creator?.name || "Unknown"}</p>
-                            </div>
-                        </div>
-
-                        {selectedGroup.meetingTime && (
-                            <div className="mb-6">
-                                <h3 className="mb-3 font-semibold text-white">Meeting Schedule</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedGroup.meetingTime.weekdays && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <CalendarIcon className="w-4 h-4 mr-2" />
-                                            Weekdays
-                                        </span>
-                                    )}
-                                    {selectedGroup.meetingTime.weekend && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <CalendarIcon className="w-4 h-4 mr-2" />
-                                            Weekend
-                                        </span>
-                                    )}
-                                    {selectedGroup.meetingTime.morning && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <ClockIcon className="w-4 h-4 mr-2" />
-                                            Morning
-                                        </span>
-                                    )}
-                                    {selectedGroup.meetingTime.evening && (
-                                        <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80">
-                                            <ClockIcon className="w-4 h-4 mr-2" />
-                                            Evening
-                                        </span>
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                                    <UsersIcon className="w-5 h-5 mb-2 text-indigo-400" />
+                                    <p className="text-sm text-white/60">Members</p>
+                                    <p className="text-lg font-bold text-white">
+                                        {selectedGroup.members?.length || 0}/{selectedGroup.maxMembers}
+                                    </p>
+                                </div>
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                                    <UserGroupIcon className="w-5 h-5 mb-2 text-purple-400" />
+                                    <p className="text-sm text-white/60">Created by</p>
+                                    <p className="text-lg font-bold text-white">{selectedGroup.creator?.name || "Unknown"}</p>
+                                    {selectedGroup.creator?.email && (
+                                        <p className="text-xs text-white/50 mt-1 break-words">{selectedGroup.creator.email}</p>
                                     )}
                                 </div>
                             </div>
-                        )}
 
-                        <button
-                            onClick={() => {
-                                handleJoinGroup(selectedGroup._id);
-                                setSelectedGroup(null);
-                            }}
-                            disabled={joinLoading === selectedGroup._id}
-                            className="w-full px-6 py-4 font-semibold text-white transition-all bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:shadow-xl"
-                        >
-                            {joinLoading === selectedGroup._id ? "Joining..." : "Join This Group"}
-                        </button>
+                            {selectedGroup.meetingTime && (
+                                <div className="mb-6">
+                                    <h3 className="mb-3 font-semibold text-white">Meeting Schedule</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedGroup.meetingTime.weekdays && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <CalendarIcon className="w-4 h-4 mr-2" />
+                                                Weekdays
+                                            </span>
+                                        )}
+                                        {selectedGroup.meetingTime.weekend && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <CalendarIcon className="w-4 h-4 mr-2" />
+                                                Weekend
+                                            </span>
+                                        )}
+                                        {selectedGroup.meetingTime.morning && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <ClockIcon className="w-4 h-4 mr-2" />
+                                                Morning
+                                            </span>
+                                        )}
+                                        {selectedGroup.meetingTime.evening && (
+                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                                <ClockIcon className="w-4 h-4 mr-2" />
+                                                Evening
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <button
+                                    onClick={() => setSelectedGroup(null)}
+                                    className="w-full sm:w-1/3 px-6 py-4 font-semibold text-white/80 transition-all bg-white/10 rounded-xl hover:bg-white/15 border border-white/10"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        handleJoinGroup(selectedGroup._id);
+                                        setSelectedGroup(null);
+                                    }}
+                                    disabled={joinLoading === selectedGroup._id}
+                                    className="w-full sm:flex-1 px-6 py-4 font-semibold text-white transition-all bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    {joinLoading === selectedGroup._id ? "Joining..." : "Join This Group"}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
