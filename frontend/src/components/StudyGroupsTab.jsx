@@ -52,6 +52,15 @@ const StudyGroupsTab = ({
 }) => {
   const userId = user?._id || user?.id;
 
+  // Helper function to convert 24-hour time to 12-hour format with AM/PM
+  const formatTime = (time24) => {
+    if (!time24) return "";
+    const [hours, minutes] = time24.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const hours12 = hours % 12 || 12;
+    return `${String(hours12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
+  };
+
   // Stats calculation
   const stats = useMemo(() => {
     const total = sgGroups.length;
@@ -287,7 +296,7 @@ const StudyGroupsTab = ({
           {/* Advanced Search */}
           {sgSearchType === "advanced" && (
             <form onSubmit={sgAdvancedSearch} className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Subject</label>
                   <input
@@ -300,39 +309,41 @@ const StudyGroupsTab = ({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Meeting Time</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { id: "weekdays", label: "Weekdays", icon: CalendarIcon },
-                      { id: "weekend", label: "Weekend", icon: SparklesIcon },
-                      { id: "morning", label: "Morning", icon: ClockIcon },
-                      { id: "evening", label: "Evening", icon: ClockIcon },
-                    ].map((time) => {
-                      const Icon = time.icon;
-                      const isSelected = sgMeetingTime[time.id];
-                      return (
-                        <label
-                          key={time.id}
-                          className={`relative cursor-pointer group`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => setSgMeetingTime(prev => ({ ...prev, [time.id]: !prev[time.id] }))}
-                            className="sr-only"
-                          />
-                          <div className={`p-3 border-2 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 ${
-                            isSelected 
-                              ? "border-indigo-500 bg-indigo-50 text-indigo-700" 
-                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                          }`}>
-                            <Icon className="w-4 h-4" />
-                            <span className="text-sm font-medium">{time.label}</span>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
+                  <label className="text-sm font-semibold text-slate-700">Day (optional)</label>
+                  <select
+                    value={sgMeetingTime?.day || ''}
+                    onChange={(e) => setSgMeetingTime(prev => ({ ...prev, day: e.target.value }))}
+                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                  >
+                    <option value="">Any day</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                    <option value="Sunday">Sunday</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Start Time (optional)</label>
+                  <input
+                    type="time"
+                    value={sgMeetingTime?.startTime || ''}
+                    onChange={(e) => setSgMeetingTime(prev => ({ ...prev, startTime: e.target.value }))}
+                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">End Time (optional)</label>
+                  <input
+                    type="time"
+                    value={sgMeetingTime?.endTime || ''}
+                    onChange={(e) => setSgMeetingTime(prev => ({ ...prev, endTime: e.target.value }))}
+                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                  />
                 </div>
               </div>
 
@@ -486,32 +497,14 @@ const StudyGroupsTab = ({
                       </div>
 
                       {/* Meeting Times */}
-                      {group.meetingTime && (
+                      {group.meetingTimes && group.meetingTimes.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {group.meetingTime.weekdays && (
-                            <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-medium flex items-center gap-1 border border-indigo-200">
-                              <CalendarIcon className="w-3.5 h-3.5" />
-                              Weekdays
-                            </span>
-                          )}
-                          {group.meetingTime.weekend && (
-                            <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-xl text-xs font-medium flex items-center gap-1 border border-purple-200">
-                              <SparklesIcon className="w-3.5 h-3.5" />
-                              Weekend
-                            </span>
-                          )}
-                          {group.meetingTime.morning && (
-                            <span className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-xl text-xs font-medium flex items-center gap-1 border border-amber-200">
+                          {group.meetingTimes.map((slot, idx) => (
+                            <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-medium flex items-center gap-1 border border-indigo-200">
                               <ClockIcon className="w-3.5 h-3.5" />
-                              Morning
+                              {slot.day} {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
                             </span>
-                          )}
-                          {group.meetingTime.evening && (
-                            <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-xs font-medium flex items-center gap-1 border border-blue-200">
-                              <ClockIcon className="w-3.5 h-3.5" />
-                              Evening
-                            </span>
-                          )}
+                          ))}
                         </div>
                       )}
 

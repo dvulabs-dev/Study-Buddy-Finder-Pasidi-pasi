@@ -20,6 +20,15 @@ const MyGroupsTab = ({
   setShowDetailsModal,
   selectedGroup,
 }) => {
+  // Helper function to convert 24-hour time to 12-hour format with AM/PM
+  const formatTime = (time24) => {
+    if (!time24) return "";
+    const [hours, minutes] = time24.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const hours12 = hours % 12 || 12;
+    return `${String(hours12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
+  };
+
   if (mgLoading) {
     return (
       <div className="py-12 text-center text-gray-500">
@@ -69,22 +78,6 @@ const MyGroupsTab = ({
               )}
             </div>
 
-            {group.meetingTime && (
-              <div className="flex flex-wrap gap-2 mt-3 text-xs text-gray-600">
-                {group.meetingTime.weekdays && (
-                  <span className="px-2 py-1 bg-gray-50 border border-gray-200 rounded-full">Weekdays</span>
-                )}
-                {group.meetingTime.weekend && (
-                  <span className="px-2 py-1 bg-gray-50 border border-gray-200 rounded-full">Weekend</span>
-                )}
-                {group.meetingTime.morning && (
-                  <span className="px-2 py-1 bg-gray-50 border border-gray-200 rounded-full">Morning</span>
-                )}
-                {group.meetingTime.evening && (
-                  <span className="px-2 py-1 bg-gray-50 border border-gray-200 rounded-full">Evening</span>
-                )}
-              </div>
-            )}
           </div>
 
           {!isCreator && (
@@ -94,9 +87,24 @@ const MyGroupsTab = ({
           )}
         </div>
 
+        {group.meetingTimes && group.meetingTimes.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="text-xs font-semibold text-gray-700 mb-2">Meeting Schedule</div>
+            <div className="space-y-1">
+              {group.meetingTimes.map((slot, idx) => (
+                <div key={idx} className="text-xs text-gray-600">
+                  <span className="inline-block px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-full">
+                    {slot.day} {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
           <div className="text-xs text-gray-500">
-            {group.meetingTime ? "Availability shown above" : "No availability set"}
+            {!group.meetingTimes || group.meetingTimes.length === 0 ? "No availability set" : ""}
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -293,24 +301,91 @@ const MyGroupsTab = ({
                     </div>
 
                     <div>
-                      <label className="block mb-2 text-sm font-semibold text-gray-700">Meeting Time *</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {["weekdays", "weekend", "morning", "evening"].map((f) => (
-                          <label key={f} className="flex items-center gap-2 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={editFormData.meetingTime[f]}
-                              onChange={() =>
-                                setEditFormData((p) => ({
+                      <label className="block mb-2 text-sm font-semibold text-gray-700">Meeting Schedule</label>
+                      
+                      <div className="space-y-3 mb-3 max-h-64 overflow-y-auto">
+                        {editFormData.meetingTimes && editFormData.meetingTimes.length > 0 ? (
+                          editFormData.meetingTimes.map((slot, idx) => (
+                            <div key={idx} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between gap-2">
+                              <div className="text-sm text-gray-700 flex-1">
+                                <span className="font-semibold">{slot.day}</span> {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setEditFormData((p) => ({
                                   ...p,
-                                  meetingTime: { ...p.meetingTime, [f]: !p.meetingTime[f] },
-                                }))
-                              }
-                              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                  meetingTimes: p.meetingTimes.filter((_, i) => i !== idx)
+                                }))}
+                                className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-3 text-xs text-gray-500 text-center bg-gray-50 border border-gray-200 rounded-lg">
+                            No meeting times added yet
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-3 bg-white border border-gray-200 rounded-lg space-y-2">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Day</label>
+                          <select
+                            id="daySelect"
+                            defaultValue=""
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          >
+                            <option value="">Select a day</option>
+                            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                              <option key={day} value={day}>{day}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Start</label>
+                            <input
+                              type="time"
+                              id="startTimeInput"
+                              defaultValue=""
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             />
-                            <span className="text-sm text-gray-700 capitalize">{f}</span>
-                          </label>
-                        ))}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">End</label>
+                            <input
+                              type="time"
+                              id="endTimeInput"
+                              defaultValue=""
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const day = document.getElementById("daySelect").value;
+                            const startTime = document.getElementById("startTimeInput").value;
+                            const endTime = document.getElementById("endTimeInput").value;
+                            
+                            if (day && startTime && endTime) {
+                              setEditFormData((p) => ({
+                                ...p,
+                                meetingTimes: [...(p.meetingTimes || []), { day, startTime, endTime }]
+                              }));
+                              document.getElementById("daySelect").value = "";
+                              document.getElementById("startTimeInput").value = "";
+                              document.getElementById("endTimeInput").value = "";
+                            }
+                          }}
+                          className="w-full px-3 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                        >
+                          + Add Time Slot
+                        </button>
                       </div>
                     </div>
 
@@ -411,22 +486,15 @@ const MyGroupsTab = ({
                     </div>
                   )}
 
-                  {selectedGroup.meetingTime && (
+                  {selectedGroup.meetingTimes && selectedGroup.meetingTimes.length > 0 && (
                     <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl">
-                      <div className="text-sm font-semibold text-gray-700">Meeting Times</div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {selectedGroup.meetingTime.weekdays && (
-                          <span className="px-2.5 py-1 text-sm text-gray-700 bg-white border border-gray-200 rounded-full">Weekdays</span>
-                        )}
-                        {selectedGroup.meetingTime.weekend && (
-                          <span className="px-2.5 py-1 text-sm text-gray-700 bg-white border border-gray-200 rounded-full">Weekend</span>
-                        )}
-                        {selectedGroup.meetingTime.morning && (
-                          <span className="px-2.5 py-1 text-sm text-gray-700 bg-white border border-gray-200 rounded-full">Morning</span>
-                        )}
-                        {selectedGroup.meetingTime.evening && (
-                          <span className="px-2.5 py-1 text-sm text-gray-700 bg-white border border-gray-200 rounded-full">Evening</span>
-                        )}
+                      <div className="text-sm font-semibold text-gray-700 mb-3">Meeting Schedule</div>
+                      <div className="space-y-2">
+                        {selectedGroup.meetingTimes.map((slot, idx) => (
+                          <div key={idx} className="text-sm text-gray-700 p-2 bg-white border border-gray-100 rounded-lg">
+                            <span className="font-semibold">{slot.day}</span> {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

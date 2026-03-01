@@ -242,15 +242,21 @@ const Dashboard = () => {
 
   const mgOpenEdit = (g) => {
     setSelectedGroup(g);
-    setEditFormData({ name: g.name, description: g.description || "", subject: g.subject, maxMembers: g.maxMembers, meetingTime: { ...g.meetingTime }, isActive: g.isActive ?? true });
+    setEditFormData({ 
+      name: g.name, 
+      description: g.description || "", 
+      subject: g.subject, 
+      maxMembers: g.maxMembers, 
+      meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : [],
+      isActive: g.isActive ?? true 
+    });
     setShowEditModal(true);
   };
 
   const mgUpdate = async (e) => {
     e.preventDefault();
     if (!editFormData.name.trim() || !editFormData.subject.trim()) { setMgError("Name and subject required"); return; }
-    const mt = editFormData.meetingTime;
-    if (!mt.weekdays && !mt.weekend && !mt.morning && !mt.evening) { setMgError("Select at least one meeting time"); return; }
+    if (!editFormData.meetingTimes || editFormData.meetingTimes.length === 0) { setMgError("Please add at least one meeting time"); return; }
     setMgActionLoading(selectedGroup._id); setMgError("");
     try { await updateStudyGroup(selectedGroup._id, editFormData); alert("Updated!"); setShowEditModal(false); loadMyGroups(); fetchDashboardData(); }
     catch (e) { setMgError(e.message || "Update failed"); }
