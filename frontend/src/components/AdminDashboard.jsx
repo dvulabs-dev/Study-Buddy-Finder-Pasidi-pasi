@@ -646,11 +646,7 @@ const AdminDashboard = () => {
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
                             {group.members?.length || 0}/{group.maxMembers} members
                           </span>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                            group.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {group.isActive ? 'Active' : 'Inactive'}
-                          </span>
+
                         </div>
                       </div>
                       <button

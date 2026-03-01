@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import {
   UserGroupIcon,
   MagnifyingGlassIcon,
@@ -26,6 +26,7 @@ import {
   LanguageIcon,
   PaintBrushIcon,
   MusicalNoteIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
 import CreateGroupModal from "./CreateGroupModal";
@@ -147,14 +148,37 @@ const StudyGroupsTab = ({
     return BookOpenIcon;
   };
 
-  // Get gradient based on group status
-  const getGroupGradient = (isMember, isFull, memberCount, maxMembers) => {
-    if (isMember) return "from-emerald-50 to-teal-50 border-emerald-200";
-    if (isFull) return "from-gray-50 to-slate-50 border-gray-200";
-    const percentage = (memberCount / maxMembers) * 100;
-    if (percentage >= 75) return "from-orange-50 to-amber-50 border-orange-200";
-    if (percentage >= 50) return "from-blue-50 to-indigo-50 border-blue-200";
-    return "from-cyan-50 to-sky-50 border-cyan-200";
+  // State for meeting status modal
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [selectedGroupForMeeting, setSelectedGroupForMeeting] = useState(null);
+
+  // Function to check if meeting matches filter inputs
+  const isMeetingNow = (meetingTimes, filterDay, filterStartTime, filterEndTime) => {
+    if (!meetingTimes || meetingTimes.length === 0) return false;
+    if (!filterDay || !filterStartTime || !filterEndTime) return false;
+
+    return meetingTimes.some((slot) => {
+      // Check if day matches
+      if (slot.day !== filterDay) return false;
+      
+      // Check if times match the filters
+      const [slotStartHour, slotStartMin] = slot.startTime.split(":").map(Number);
+      const [filterStartHour, filterStartMin] = filterStartTime.split(":").map(Number);
+      const [filterEndHour, filterEndMin] = filterEndTime.split(":").map(Number);
+      
+      const slotStartInMinutes = slotStartHour * 60 + slotStartMin;
+      const filterStartInMinutes = filterStartHour * 60 + filterStartMin;
+      const filterEndInMinutes = filterEndHour * 60 + filterEndMin;
+      
+      // Check if slot start time falls within filter time range
+      return slotStartInMinutes >= filterStartInMinutes && slotStartInMinutes < filterEndInMinutes;
+    });
+  };
+
+  // Function to open meeting status modal
+  const openMeetingModal = (group) => {
+    setSelectedGroupForMeeting(group);
+    setShowMeetingModal(true);
   };
 
   return (
@@ -422,7 +446,6 @@ const StudyGroupsTab = ({
                 const isFull = memberCount >= maxMembers;
                 const availableSpots = maxMembers - memberCount;
                 const percentage = (memberCount / maxMembers) * 100;
-                const groupGradient = getGroupGradient(isMember, isFull, memberCount, maxMembers);
                 const SubjectIcon = getSubjectIcon(group.subject);
                 const imageUrl = getGroupImage(group, index);
 
@@ -496,20 +519,25 @@ const StudyGroupsTab = ({
                         </div>
                       </div>
 
-                      {/* Meeting Times */}
+                      {/* Meeting Times - Click to see status */}
                       {group.meetingTimes && group.meetingTimes.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {group.meetingTimes.map((slot, idx) => (
-                            <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-medium flex items-center gap-1 border border-indigo-200">
-                              <ClockIcon className="w-3.5 h-3.5" />
-                              {slot.day} {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
-                            </span>
-                          ))}
+                          <button 
+                            onClick={() => openMeetingModal(group)}
+                            className="flex flex-wrap gap-2 outline-none"
+                          >
+                            {group.meetingTimes.map((slot, idx) => (
+                              <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-medium flex items-center gap-1 border border-indigo-200 hover:bg-indigo-100 cursor-pointer transition-colors">
+                                <ClockIcon className="w-3.5 h-3.5" />
+                                {slot.day} {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
+                              </span>
+                            ))}
+                          </button>
                         </div>
                       )}
 
                       {/* Action Button */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
                         {!isMember ? (
                           <button
                             onClick={() => handleJoinGroup(group._id)}
@@ -543,6 +571,14 @@ const StudyGroupsTab = ({
                             Already Joined
                           </div>
                         )}
+                        
+                        <button
+                          onClick={() => openMeetingModal(group)}
+                          className="py-3 px-4 font-semibold text-white transition-all duration-300 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:from-cyan-600 hover:to-blue-700 shadow-lg hover:shadow-blue-500/25"
+                          title="View meeting schedule"
+                        >
+                          <ClockIcon className="w-5 h-5" />
+                        </button>
                       </div>
 
                       {/* Available Spots Badge */}
@@ -596,6 +632,103 @@ const StudyGroupsTab = ({
           fetchDashboardData();
         }}
       />
+
+      {/* Meeting Status Modal */}
+      {showMeetingModal && selectedGroupForMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-md p-8 bg-white rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowMeetingModal(false)}
+              className="absolute top-4 right-4 p-2 transition-colors rounded-full hover:bg-gray-100"
+            >
+              <XCircleIcon className="w-6 h-6 text-gray-400" />
+            </button>
+
+            {/* Group Title */}
+            <h2 className="mb-2 text-2xl font-bold text-slate-900">{selectedGroupForMeeting.name}</h2>
+            <p className="mb-6 text-sm text-slate-500">{selectedGroupForMeeting.subject}</p>
+
+            {/* Meeting Status */}
+            <div className="mb-6 p-4 rounded-2xl border-2 border-indigo-200 bg-indigo-50">
+              <div className="flex items-center gap-3">
+                {isMeetingNow(selectedGroupForMeeting.meetingTimes, sgMeetingTime?.day, sgMeetingTime?.startTime, sgMeetingTime?.endTime) ? (
+                  <>
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600">
+                      <CheckCircleIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-green-700">Group is Meeting Now! 🎉</p>
+                      <p className="text-sm text-green-600">This group has a meeting at your selected time</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-300">
+                      <ClockIcon className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-700">Not Meeting at Selected Time</p>
+                      <p className="text-sm text-slate-600">This group doesn't have a meeting matching your filters</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Meeting Schedule */}
+            <div className="mb-6">
+              <h3 className="mb-4 text-lg font-semibold text-slate-900">Meeting Schedule</h3>
+              {selectedGroupForMeeting.meetingTimes && selectedGroupForMeeting.meetingTimes.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedGroupForMeeting.meetingTimes.map((slot, idx) => (
+                    <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:border-indigo-300 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <CalendarIcon className="w-5 h-5 text-indigo-600" />
+                        <div>
+                          <p className="font-semibold text-slate-900">{slot.day}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <ClockIcon className="w-4 h-4 text-slate-500" />
+                            <span className="text-sm text-slate-600">
+                              {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-600">No meeting schedule set</p>
+              )}
+            </div>
+
+            {/* Group Info */}
+            <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Members</span>
+                  <span className="font-semibold text-slate-900">{selectedGroupForMeeting.members?.length || 0} / {selectedGroupForMeeting.maxMembers}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600"
+                    style={{ width: `${((selectedGroupForMeeting.members?.length || 0) / selectedGroupForMeeting.maxMembers) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowMeetingModal(false)}
+              className="w-full px-6 py-3 font-semibold text-white transition-all duration-300 shadow-lg bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-xl hover:from-indigo-700 hover:to-indigo-800"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
