@@ -306,14 +306,6 @@ exports.joinStudyGroup = async (req, res) => {
             });
         }
 
-        //Check if group is active
-        if (!studyGroup.isActive){
-            return res.status(400)
-            .json({
-                message: "This study group is no longer active",
-            });
-        }
-
         //Check if user is already a member
         if (studyGroup.members.includes(req.user.id)){
             return res.status(400)

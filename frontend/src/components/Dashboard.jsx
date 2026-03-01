@@ -247,8 +247,7 @@ const Dashboard = () => {
       description: g.description || "", 
       subject: g.subject, 
       maxMembers: g.maxMembers, 
-      meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : [],
-      isActive: g.isActive ?? true 
+      meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : []
     });
     setShowEditModal(true);
   };

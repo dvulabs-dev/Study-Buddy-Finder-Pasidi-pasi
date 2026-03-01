@@ -42,7 +42,6 @@ const MyGroupsTab = ({
 
   const GroupCard = ({ group, isCreator }) => {
     const memberCount = group.members?.length || 0;
-    const isActive = group.isActive !== false;
 
     return (
       <div className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm transition hover:shadow-md hover:border-indigo-200">
@@ -65,17 +64,7 @@ const MyGroupsTab = ({
               {!isCreator && group.creator?.name && (
                 <span className="text-xs text-gray-500">Created by {group.creator.name}</span>
               )}
-              {isCreator && (
-                <span
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                    isActive
-                      ? "bg-green-50 text-green-700 border-green-100"
-                      : "bg-gray-50 text-gray-600 border-gray-200"
-                  }`}
-                >
-                  {isActive ? "✓ Active" : "✗ Inactive"}
-                </span>
-              )}
+
             </div>
 
           </div>
@@ -389,15 +378,7 @@ const MyGroupsTab = ({
                       </div>
                     </div>
 
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={editFormData.isActive}
-                        onChange={(e) => setEditFormData((p) => ({ ...p, isActive: e.target.checked }))}
-                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                      />
-                      <span className="text-sm text-gray-700">Group is Active</span>
-                    </label>
+
                   </div>
                 </div>
 
@@ -523,12 +504,7 @@ const MyGroupsTab = ({
                     </div>
                   )}
 
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl">
-                    <div className="text-sm font-semibold text-gray-700">Status</div>
-                    <p className={`mt-2 font-semibold ${selectedGroup.isActive !== false ? "text-green-700" : "text-gray-600"}`}>
-                      {selectedGroup.isActive !== false ? "✓ Active" : "✗ Inactive"}
-                    </p>
-                  </div>
+
                 </div>
 
                 <button

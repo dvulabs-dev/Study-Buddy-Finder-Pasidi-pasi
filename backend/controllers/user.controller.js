@@ -48,7 +48,6 @@ exports.searchUsersBySubject = async(req, res ) => {
     // 2. Find users who are members of study groups with this subject
     const matchingGroups = await StudyGroup.find({
        subject: { $regex: subject, $options: "i" },
-       isActive: true,
     }).select("members");
 
     // Collect all member IDs from matching groups
@@ -114,21 +113,46 @@ exports.searchUsersByAvailability= async (req, res) => {
                 _id: { $ne: req.user.id }, 
             };
 
-            //Add available time filter - only filter by checked (true) values
+            //Add available time filter - check individual days and times
             if(availableTime){
-                if(availableTime.weekdays === true){
-                    query["availableTime.weekdays"] = true;
-                }
-                if(availableTime.weekend === true){
-                    query["availableTime.weekend"] = true;
-                }
-                if(availableTime.morning === true){
-                    query["availableTime.morning"] = true;
-                }
-                if(availableTime.evening === true){
-                    query["availableTime.evening"] = true;
+                const daysSelected = [];
+                const dayMap = {
+                    'monday': 'Monday',
+                    'tuesday': 'Tuesday',
+                    'wednesday': 'Wednesday',
+                    'thursday': 'Thursday',
+                    'friday': 'Friday',
+                    'saturday': 'Saturday',
+                    'sunday': 'Sunday'
+                };
+                
+                Object.entries(dayMap).forEach(([key, value]) => {
+                    if(availableTime[key] === true){
+                        daysSelected.push(value);
+                    }
+                });
+
+                if(daysSelected.length > 0){
+                    query['availableTime'] = {
+                        $elemMatch: {
+                            day: { $in: daysSelected }
+                        }
+                    };
                 }
 
+                // Filter by time range if provided
+                if(availableTime.startTime && availableTime.endTime){
+                    if(!query['availableTime']){
+                        query['availableTime'] = {
+                            $elemMatch: {}
+                        };
+                    }
+                    if(!query['availableTime'].$elemMatch){
+                        query['availableTime'].$elemMatch = {};
+                    }
+                    query['availableTime'].$elemMatch.startTime = { $lte: availableTime.endTime };
+                    query['availableTime'].$elemMatch.endTime = { $gte: availableTime.startTime };
+                }
             }
 
             const profileUsers = await User.find(query)
@@ -138,7 +162,6 @@ exports.searchUsersByAvailability= async (req, res) => {
             // Also find users who are members of study groups with this subject
             const matchingGroups = await StudyGroup.find({
               subject: { $regex: subject, $options: "i" },
-              isActive: true,
             }).select("members");
 
             const groupMemberIds = new Set();
