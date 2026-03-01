@@ -1,4 +1,5 @@
 
+const { model } = require("mongoose");
 const StudyGroup = require("../models/StudyGroup");
 const User = require("../models/User");
 
@@ -8,13 +9,20 @@ const User = require("../models/User");
 
 exports.createStudyGroup = async (req, res) => {
  try {
-    const {name, description, subject, maxMembers, meetingTime} = req.body;
+    const {name, description, subject, maxMembers, meetingTimes} = req.body;
 
     //Validation
     if (!name || !subject){
         return res.status(400)
         .json({
             message: "Please provide a name and subject",
+        });
+    }
+
+    if (!meetingTimes || meetingTimes.length === 0) {
+        return res.status(400)
+        .json({
+            message: "Please provide at least one meeting time",
         });
     }
 
@@ -35,7 +43,7 @@ exports.createStudyGroup = async (req, res) => {
         description,
         subject,
         creator: req.user.id,
-        meetingTime,
+        meetingTimes,
         maxMembers: maxMembers || 10,
 
     });
@@ -70,7 +78,7 @@ exports.createStudyGroup = async (req, res) => {
 exports.getAllStudyGroups = async (req, res) => {
     try {
 
-       const studyGroups = await StudyGroup.find({ isActive: true })
+       const studyGroups = await StudyGroup.find()
           .populate("creator", "name email degree year")
           .populate("members", "name email degree year")
             .sort({ createdAt: -1 });
@@ -110,14 +118,20 @@ exports.updateStudyGroup = async (req, res) => {
             });
         }
 
-        //update files if provided
-        const {name, description, subject, meetingTime, maxMembers, isActive} = req.body;
+        //update fields if provided
+        const {name, description, subject, meetingTimes, maxMembers} = req.body;
 
         if (name!== undefined) studyGroup.name = name;
         if (description !== undefined) studyGroup.description = description;
         if (subject !== undefined) studyGroup.subject = subject;
-        if (meetingTime !== undefined) studyGroup.meetingTime = meetingTime;
-        if (isActive !== undefined) studyGroup.isActive = isActive;
+        if (meetingTimes !== undefined) {
+            if (meetingTimes.length === 0) {
+                return res.status(400).json({
+                    message: "At least one meeting time is required",
+                });
+            }
+            studyGroup.meetingTimes = meetingTimes;
+        }
 
 
      //check if maxMember is valid
@@ -182,7 +196,7 @@ exports.getStudyGroupById = async (req, res) => {
 };
 
 
-// @desc    seach study groups by subject
+// @desc    Search study groups by subject
 // @route   GET /api/studygroups/search?subject=Math
 // @access  Private
 exports.searchStudyGroupsBySubject = async (req, res) => {
@@ -197,8 +211,7 @@ exports.searchStudyGroupsBySubject = async (req, res) => {
         }
 
         const studyGroups = await StudyGroup.find({
-            subject: { $regex: subject, $options: "i" },
-            isActive: true,
+            subject: { $regex: subject, $options: "i" }
         })
         .populate("creator", "name")
         .populate("members", "name")
@@ -226,11 +239,10 @@ exports.searchStudyGroupsBySubject = async (req, res) => {
 
 exports.searchStudyGroupsByAvailability = async (req, res) => {
     try {
-        const { subject, meetingTime } = req.body;
+        const { subject, day, startTime, endTime } = req.body;
 
         //Build query
         const query = {
-            isActive: true,
         };
 
         //add Subject filter is provided
@@ -239,21 +251,24 @@ exports.searchStudyGroupsByAvailability = async (req, res) => {
         }
 
         // add meeting time filter if provided
-        if (meetingTime) {
-            if (meetingTime.weekdays !== undefined) {
-            query["meetingTime.weekdays"] = meetingTime.weekdays;
+        if (day || startTime || endTime) {
+            query.meetingTimes = {
+                $elemMatch: {},
+            };
+
+            if (day) {
+                query.meetingTimes.$elemMatch.day = day;
             }
-            if (meetingTime.weekend !== undefined) {
-                query["meetingTime.weekend"] = meetingTime.weekend;
+
+            if (startTime) {
+                query.meetingTimes.$elemMatch.startTime = { $lte: startTime };
             }
-            if (meetingTime.morning !== undefined) {
-                query["meetingTime.morning"] = meetingTime.morning;
+
+            if (endTime) {
+                query.meetingTimes.$elemMatch.endTime = { $gte: endTime };
             }
-            if (meetingTime.evening !== undefined) {
-                query["meetingTime.evening"] = meetingTime.evening;
-            }
-            
-        }
+       }
+        
 
         const studyGroups = await StudyGroup.find(query)
         .populate("creator", "name email")
@@ -442,6 +457,8 @@ exports.deleteStudyGroup = async (req, res) => {
         });
      }
 };
+
+module.exports = exports;
 
 
 

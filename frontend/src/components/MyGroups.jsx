@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import EditGroupModal from "./EditGroupModal";
 import { getAllStudyGroups,
          getStudyGroupById,
          updateStudyGroup,
@@ -75,37 +76,16 @@ const MyGroups = () => {
     // Open edit modal
     const handleOpenEdit = (group) => {
         setSelectedGroup(group);
-        setEditFormData({
-            name: group.name,
-            description: group.description || '',
-            subject: group.subject,
-            maxMembers: group.maxMembers,
-            meetingTime: {...group.meetingTime},
-            isActive: group.isActive ?? true,
-        });
         setShowEditModal(true);
     };
 
     // Update Group
-    const handleUpdateGroup = async (e) => {
-        e.preventDefault();
-
-        if (!editFormData.name.trim() || !editFormData.subject.trim()) {
-            setError('Name and subject are required');
-            return;
-        }
-
-        const { weekdays, weekend, morning, evening } = editFormData.meetingTime;
-        if (!weekdays && !weekend && !morning && !evening) {
-            setError('Please select at least one meeting time');
-            return;
-        }
-
+    const handleUpdateGroup = async (updatedData) => {
         setActionLoading(selectedGroup._id);
         setError('');
 
         try {
-            await updateStudyGroup(selectedGroup._id, editFormData);
+            await updateStudyGroup(selectedGroup._id, updatedData);
             setShowEditModal(false);
             loadMyGroups();
         } catch (error) {
@@ -149,24 +129,6 @@ const MyGroups = () => {
         } finally {
             setActionLoading(null);
         }
-    };
-
-    const handleEditChange = (e) => {
-        const { name, value } = e.target;
-        setEditFormData((prev) => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const handleEditCheckbox = (field) => {
-        setEditFormData((prev) => ({
-            ...prev,
-            meetingTime: {
-                ...prev.meetingTime,
-                [field]: !prev.meetingTime[field],
-            },
-        }));
     };
 
     // Filter groups based on active tab
@@ -364,28 +326,13 @@ const MyGroups = () => {
                                             <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg">
                                                 👥 {group.members?.length || 0}/{group.maxMembers} members
                                             </span>
-                                            {group.meetingTime && (
+                                            {group.meetingTimes && group.meetingTimes.length > 0 && (
                                                 <>
-                                                    {group.meetingTime.weekdays && (
-                                                        <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg bg-amber-100 text-amber-700">
-                                                            📅 Weekdays
+                                                    {group.meetingTimes.map((slot, idx) => (
+                                                        <span key={idx} className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg bg-amber-100 text-amber-700">
+                                                            🕐 {slot.day} {slot.startTime}-{slot.endTime}
                                                         </span>
-                                                    )}
-                                                    {group.meetingTime.weekend && (
-                                                        <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg bg-amber-100 text-amber-700">
-                                                            📅 Weekend
-                                                        </span>
-                                                    )}
-                                                    {group.meetingTime.morning && (
-                                                        <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg bg-amber-100 text-amber-700">
-                                                            🌅 Morning
-                                                        </span>
-                                                    )}
-                                                    {group.meetingTime.evening && (
-                                                        <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-lg bg-amber-100 text-amber-700">
-                                                            🌆 Evening
-                                                        </span>
-                                                    )}
+                                                    ))}
                                                 </>
                                             )}
                                         </div>
@@ -490,173 +437,14 @@ const MyGroups = () => {
                     </div>
                 )}
 
-                {/* Edit Modal */}
-                {showEditModal && editFormData && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                            <div className="sticky top-0 px-6 py-4 bg-white border-b border-gray-200 rounded-t-2xl">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-gray-900">Edit Study Group</h3>
-                                    <button
-                                        onClick={() => setShowEditModal(false)}
-                                        className="flex items-center justify-center w-8 h-8 text-gray-500 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200 hover:text-gray-700"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <form onSubmit={handleUpdateGroup} className="p-6 space-y-6">
-                                {/* Group Name */}
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-700">
-                                        Group Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={editFormData.name}
-                                        onChange={handleEditChange}
-                                        className="w-full px-4 py-3 transition-all border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                        placeholder="Enter group name"
-                                    />
-                                </div>
-
-                                {/* Subject */}
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-700">
-                                        Subject <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="subject"
-                                        value={editFormData.subject}
-                                        onChange={handleEditChange}
-                                        className="w-full px-4 py-3 transition-all border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                        placeholder="e.g., Mathematics, Physics"
-                                    />
-                                </div>
-
-                                {/* Description */}
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-700">
-                                        Description
-                                    </label>
-                                    <textarea
-                                        name="description"
-                                        value={editFormData.description}
-                                        onChange={handleEditChange}
-                                        rows="4"
-                                        className="w-full px-4 py-3 transition-all border border-gray-300 resize-none rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                        placeholder="Describe your study group..."
-                                    />
-                                </div>
-
-                                {/* Max Members */}
-                                <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-700">
-                                        Maximum Members
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="maxMembers"
-                                        value={editFormData.maxMembers}
-                                        onChange={handleEditChange}
-                                        min="2"
-                                        max="50"
-                                        className="w-full px-4 py-3 transition-all border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                    />
-                                </div>
-
-                                {/* Meeting Time */}
-                                <div>
-                                    <label className="block mb-3 text-sm font-medium text-gray-700">
-                                        Meeting Time <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {[
-                                            { id: 'weekdays', label: 'Weekdays', icon: '📅' },
-                                            { id: 'weekend', label: 'Weekend', icon: '📅' },
-                                            { id: 'morning', label: 'Morning', icon: '🌅' },
-                                            { id: 'evening', label: 'Evening', icon: '🌆' }
-                                        ].map((item) => (
-                                            <label
-                                                key={item.id}
-                                                className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                                                    editFormData.meetingTime[item.id]
-                                                        ? 'border-indigo-600 bg-indigo-50'
-                                                        : 'border-gray-200 hover:border-gray-300'
-                                                }`}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={editFormData.meetingTime[item.id]}
-                                                    onChange={() => handleEditCheckbox(item.id)}
-                                                    className="sr-only"
-                                                />
-                                                <div className="flex items-center space-x-3">
-                                                    <span className="text-xl">{item.icon}</span>
-                                                    <span className={`text-sm font-medium ${
-                                                        editFormData.meetingTime[item.id] ? 'text-indigo-700' : 'text-gray-700'
-                                                    }`}>
-                                                        {item.label}
-                                                    </span>
-                                                </div>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Active Status */}
-                                <div className="flex items-center">
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={editFormData.isActive}
-                                            onChange={(e) => setEditFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
-                                            className="sr-only peer"
-                                        />
-                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                                        <span className="ml-3 text-sm font-medium text-gray-700">Group is Active</span>
-                                    </label>
-                                </div>
-
-                                {error && (
-                                    <div className="p-4 border border-red-200 bg-red-50 rounded-xl">
-                                        <p className="text-sm text-red-600">{error}</p>
-                                    </div>
-                                )}
-
-                                <div className="flex gap-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowEditModal(false)}
-                                        className="flex-1 px-6 py-3 font-medium text-gray-700 transition-all border-2 border-gray-300 rounded-xl hover:bg-gray-50"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={actionLoading}
-                                        className="flex-1 px-6 py-3 font-medium text-white transition-all bg-indigo-600 shadow-sm rounded-xl hover:bg-indigo-700 disabled:bg-indigo-400 hover:shadow"
-                                    >
-                                        {actionLoading ? (
-                                            <div className="flex items-center justify-center">
-                                                <svg className="w-5 h-5 mr-3 -ml-1 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Updating...
-                                            </div>
-                                        ) : 'Update Group'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                )}
+                {/* Edit Modal with Clock Time Picker */}
+                <EditGroupModal
+                    isOpen={showEditModal}
+                    group={selectedGroup}
+                    onClose={() => setShowEditModal(false)}
+                    onUpdateGroup={handleUpdateGroup}
+                    loading={actionLoading === selectedGroup?._id}
+                />
 
                 {/* Details Modal */}
                 {showDetailsModal && selectedGroup && (
@@ -712,30 +500,15 @@ const MyGroups = () => {
                                     </div>
                                 )}
 
-                                {selectedGroup.meetingTime && (
+                                {selectedGroup.meetingTimes && selectedGroup.meetingTimes.length > 0 && (
                                     <div>
                                         <p className="mb-3 text-xs font-medium text-gray-600">Meeting Times</p>
                                         <div className="flex flex-wrap gap-2">
-                                            {selectedGroup.meetingTime.weekdays && (
-                                                <span className="flex items-center px-4 py-2 text-sm font-medium bg-amber-100 text-amber-700 rounded-xl">
-                                                    <span className="mr-2">📅</span> Weekdays
+                                            {selectedGroup.meetingTimes.map((slot, idx) => (
+                                                <span key={idx} className="flex items-center px-4 py-2 text-sm font-medium bg-amber-100 text-amber-700 rounded-xl">
+                                                    <span className="mr-2">🕐</span> {slot.day} {slot.startTime}-{slot.endTime}
                                                 </span>
-                                            )}
-                                            {selectedGroup.meetingTime.weekend && (
-                                                <span className="flex items-center px-4 py-2 text-sm font-medium bg-amber-100 text-amber-700 rounded-xl">
-                                                    <span className="mr-2">📅</span> Weekend
-                                                </span>
-                                            )}
-                                            {selectedGroup.meetingTime.morning && (
-                                                <span className="flex items-center px-4 py-2 text-sm font-medium bg-amber-100 text-amber-700 rounded-xl">
-                                                    <span className="mr-2">🌅</span> Morning
-                                                </span>
-                                            )}
-                                            {selectedGroup.meetingTime.evening && (
-                                                <span className="flex items-center px-4 py-2 text-sm font-medium bg-amber-100 text-amber-700 rounded-xl">
-                                                    <span className="mr-2">🌆</span> Evening
-                                                </span>
-                                            )}
+                                            ))}
                                         </div>
                                     </div>
                                 )}

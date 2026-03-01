@@ -45,14 +45,21 @@ const backgroundPattern = "https://images.unsplash.com/photo-1557683316-973673ba
 
 const StudyGroupBrowser = () => {
     const navigate = useNavigate();
+    
+    // Helper function to convert 24-hour time to 12-hour format with AM/PM
+    const formatTime = (time24) => {
+        if (!time24) return "";
+        const [hours, minutes] = time24.split(":").map(Number);
+        const period = hours >= 12 ? "PM" : "AM";
+        const hours12 = hours % 12 || 12;
+        return `${String(hours12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
+    };
+    
     const [searchType, setSearchType] = useState("all");
     const [subject, setSubject] = useState('');
-    const [meetingTime, setMeetingTime] = useState({
-        weekdays: false,
-        weekend: false,
-        morning: false,
-        evening: false,
-    });
+    const [searchDay, setSearchDay] = useState('');
+    const [searchStartTime, setSearchStartTime] = useState('');
+    const [searchEndTime, setSearchEndTime] = useState('');
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -106,7 +113,9 @@ const StudyGroupBrowser = () => {
         try {
             const data = await searchStudyGroupsByAvailability({
                 subject: subject || undefined,
-                meetingTime,
+                day: searchDay || undefined,
+                startTime: searchStartTime || undefined,
+                endTime: searchEndTime || undefined,
             });
             setGroups(data.studyGroups);
         } catch (error) {
@@ -147,6 +156,15 @@ const StudyGroupBrowser = () => {
         }
     };
 
+    const clearFilters = () => {
+        setSubject('');
+        setSearchDay('');
+        setSearchStartTime('');
+        setSearchEndTime('');
+        setSearchType("all");
+        loadAllGroups();
+    };
+
     const handleCheckboxChange = (field) => {
         setMeetingTime((prev) => ({
             ...prev,
@@ -154,16 +172,7 @@ const StudyGroupBrowser = () => {
         }));
     };
 
-    const clearFilters = () => {
-        setSubject('');
-        setMeetingTime({
-            weekdays: false,
-            weekend: false,
-            morning: false,
-            evening: false,
-        });
-        loadAllGroups();
-    };
+   
 
     // Get random image for group (in real app, this would come from backend)
     const getGroupImage = (index) => {
@@ -331,32 +340,48 @@ const StudyGroupBrowser = () => {
                                     />
                                 </div>
 
-                                {/* Meeting Time */}
-                                <div>
-                                    <label className="block mb-3 text-sm font-medium text-white/80">
-                                        Meeting Time Preferences
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                                        {[
-                                            { id: 'weekdays', label: 'Weekdays', icon: CalendarIcon },
-                                            { id: 'weekend', label: 'Weekend', icon: CalendarIcon },
-                                            { id: 'morning', label: 'Morning', icon: ClockIcon },
-                                            { id: 'evening', label: 'Evening', icon: ClockIcon }
-                                        ].map((item) => (
-                                            <button
-                                                key={item.id}
-                                                type="button"
-                                                onClick={() => handleCheckboxChange(item.id)}
-                                                className={`group p-4 rounded-xl border transition-all flex flex-col items-center space-y-2 ${
-                                                    meetingTime[item.id]
-                                                        ? 'bg-indigo-600 border-indigo-400 text-white'
-                                                        : 'bg-white/5 border-white/20 text-white/60 hover:bg-white/10 hover:text-white'
-                                                }`}
-                                            >
-                                                <item.icon className="w-5 h-5" />
-                                                <span className="text-sm font-medium">{item.label}</span>
-                                            </button>
-                                        ))}
+                                {/* Meeting Time Filters */}
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                    <div>
+                                        <label className="block mb-2 text-sm font-medium text-white/80">
+                                            Day (optional)
+                                        </label>
+                                        <select
+                                            value={searchDay}
+                                            onChange={(e) => setSearchDay(e.target.value)}
+                                            className="w-full px-4 py-3 text-white border bg-white/5 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <option value="">Any day</option>
+                                            <option value="Monday">Monday</option>
+                                            <option value="Tuesday">Tuesday</option>
+                                            <option value="Wednesday">Wednesday</option>
+                                            <option value="Thursday">Thursday</option>
+                                            <option value="Friday">Friday</option>
+                                            <option value="Saturday">Saturday</option>
+                                            <option value="Sunday">Sunday</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block mb-2 text-sm font-medium text-white/80">
+                                            Start Time (optional)
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={searchStartTime}
+                                            onChange={(e) => setSearchStartTime(e.target.value)}
+                                            className="w-full px-4 py-3 text-white border bg-white/5 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block mb-2 text-sm font-medium text-white/80">
+                                            End Time (optional)
+                                        </label>
+                                        <input
+                                            type="time"
+                                            value={searchEndTime}
+                                            onChange={(e) => setSearchEndTime(e.target.value)}
+                                            className="w-full px-4 py-3 text-white border bg-white/5 border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
                                     </div>
                                 </div>
 
@@ -502,32 +527,14 @@ const StudyGroupBrowser = () => {
                                         </div>
 
                                         {/* Meeting Times */}
-                                        {group.meetingTime && (
+                                        {group.meetingTimes && group.meetingTimes.length > 0 && (
                                             <div className="flex flex-wrap gap-2">
-                                                {group.meetingTime.weekdays && (
-                                                    <span className="flex items-center px-2 py-1 text-xs rounded-lg bg-white/10 text-white/80">
-                                                        <CalendarIcon className="w-3 h-3 mr-1" />
-                                                        Weekdays
-                                                    </span>
-                                                )}
-                                                {group.meetingTime.weekend && (
-                                                    <span className="flex items-center px-2 py-1 text-xs rounded-lg bg-white/10 text-white/80">
-                                                        <CalendarIcon className="w-3 h-3 mr-1" />
-                                                        Weekend
-                                                    </span>
-                                                )}
-                                                {group.meetingTime.morning && (
-                                                    <span className="flex items-center px-2 py-1 text-xs rounded-lg bg-white/10 text-white/80">
+                                                {group.meetingTimes.map((slot, idx) => (
+                                                    <span key={idx} className="flex items-center px-2 py-1 text-xs rounded-lg bg-white/10 text-white/80">
                                                         <ClockIcon className="w-3 h-3 mr-1" />
-                                                        Morning
+                                                        {slot.day} {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
                                                     </span>
-                                                )}
-                                                {group.meetingTime.evening && (
-                                                    <span className="flex items-center px-2 py-1 text-xs rounded-lg bg-white/10 text-white/80">
-                                                        <ClockIcon className="w-3 h-3 mr-1" />
-                                                        Evening
-                                                    </span>
-                                                )}
+                                                ))}
                                             </div>
                                         )}
                                     </div>
@@ -658,34 +665,16 @@ const StudyGroupBrowser = () => {
                                 </div>
                             </div>
 
-                            {selectedGroup.meetingTime && (
+                            {selectedGroup.meetingTimes && selectedGroup.meetingTimes.length > 0 && (
                                 <div className="mb-6">
                                     <h3 className="mb-3 font-semibold text-white">Meeting Schedule</h3>
                                     <div className="flex flex-wrap gap-2">
-                                        {selectedGroup.meetingTime.weekdays && (
-                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
-                                                <CalendarIcon className="w-4 h-4 mr-2" />
-                                                Weekdays
-                                            </span>
-                                        )}
-                                        {selectedGroup.meetingTime.weekend && (
-                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
-                                                <CalendarIcon className="w-4 h-4 mr-2" />
-                                                Weekend
-                                            </span>
-                                        )}
-                                        {selectedGroup.meetingTime.morning && (
-                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
+                                        {selectedGroup.meetingTimes.map((slot, idx) => (
+                                            <span key={idx} className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
                                                 <ClockIcon className="w-4 h-4 mr-2" />
-                                                Morning
+                                                {slot.day} {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
                                             </span>
-                                        )}
-                                        {selectedGroup.meetingTime.evening && (
-                                            <span className="flex items-center px-3 py-2 text-sm bg-white/10 rounded-xl text-white/80 border border-white/10">
-                                                <ClockIcon className="w-4 h-4 mr-2" />
-                                                Evening
-                                            </span>
-                                        )}
+                                        ))}
                                     </div>
                                 </div>
                             )}

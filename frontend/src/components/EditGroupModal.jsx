@@ -1,49 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TimePicker from "react-time-picker";
 import "react-time-picker/dist/TimePicker.css";
 import "react-clock/dist/Clock.css";
-import { createStudyGroup } from "../services/studyGroupService";
 
-const INITIAL_FORM_DATA = {
-  name: "",
-  description: "",
-  subject: "",
-  maxMembers: 10,
-  meetingTimes: [
-    {
-      startTime: "10:00",
-      endTime: "12:00",
-      day: "Monday",
-    },
-  ],
-};
+const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    subject: "",
+    maxMembers: 10,
+  });
 
-const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
-  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
-  const [meetingTimeSlots, setMeetingTimeSlots] = useState(
-    INITIAL_FORM_DATA.meetingTimes
-  );
-  const [loading, setLoading] = useState(false);
+  const [meetingTimeSlots, setMeetingTimeSlots] = useState([]);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
 
-  // Don't render if modal is closed
-  if (!isOpen) {
-    return null;
-  }
+  // Initialize when group changes
+  useEffect(() => {
+    if (group) {
+      setFormData({
+        name: group.name || "",
+        description: group.description || "",
+        subject: group.subject || "",
+        maxMembers: group.maxMembers || 10,
+      });
+      setMeetingTimeSlots(
+        group.meetingTimes && group.meetingTimes.length > 0
+          ? group.meetingTimes
+          : [
+              {
+                startTime: "10:00",
+                endTime: "12:00",
+                day: "Monday",
+              },
+            ]
+      );
+      setErrors({});
+      setFormError("");
+    }
+  }, [group, isOpen]);
 
-  const validate = (data) => {
+  if (!isOpen || !group) return null;
+
+  const validate = () => {
     const nextErrors = {};
 
-    if (!data.name.trim()) {
+    if (!formData.name.trim()) {
       nextErrors.name = "Please provide a group name";
     }
 
-    if (!data.subject.trim()) {
+    if (!formData.subject.trim()) {
       nextErrors.subject = "Please provide a subject";
     }
 
-    const max = Number(data.maxMembers);
+    const max = Number(formData.maxMembers);
     if (!Number.isFinite(max) || max < 2 || max > 50) {
       nextErrors.maxMembers = "Maximum members must be between 2 and 50";
     }
@@ -51,7 +61,6 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
     if (!meetingTimeSlots || meetingTimeSlots.length === 0) {
       nextErrors.meetingTimes = "Please add at least one meeting time";
     } else {
-      // Validate each time slot
       for (const slot of meetingTimeSlots) {
         if (!slot.startTime || !slot.endTime || !slot.day) {
           nextErrors.meetingTimes = "Each meeting time must have day, start time, and end time";
@@ -82,7 +91,8 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "maxMembers" ? (value === "" ? "" : Number(value)) : value,
+      [name]:
+        name === "maxMembers" ? (value === "" ? "" : Number(value)) : value,
     }));
 
     setFormError("");
@@ -121,60 +131,25 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleRemoveTimeSlot = (index) => {
     if (meetingTimeSlots.length > 1) {
-      setMeetingTimeSlots(
-        meetingTimeSlots.filter((_, i) => i !== index)
-      );
+      setMeetingTimeSlots(meetingTimeSlots.filter((_, i) => i !== index));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const nextErrors = validate(formData);
+    const nextErrors = validate();
     setErrors(nextErrors);
     setFormError("");
+
     if (Object.keys(nextErrors).length > 0) return;
 
-    setLoading(true);
-    try {
-      const submitData = {
-        ...formData,
-        meetingTimes: meetingTimeSlots,
-      };
+    const submitData = {
+      ...formData,
+      meetingTimes: meetingTimeSlots,
+    };
 
-      await createStudyGroup(submitData);
-      
-      setFormData(INITIAL_FORM_DATA);
-      setMeetingTimeSlots(INITIAL_FORM_DATA.meetingTimes);
-      onSuccess();
-      onClose();
-    } catch (error) {
-      console.error("Error creating study group:", error);
-      let errorMessage = "Failed to create study group. Please try again.";
-
-      if (typeof error === "string") {
-        errorMessage = error;
-      } else if (error?.message && typeof error.message === "string") {
-        errorMessage = error.message;
-      } else if (
-        error?.response?.data?.message &&
-        typeof error.response.data.message === "string"
-      ) {
-        errorMessage = error.response.data.message;
-      }
-
-      setFormError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClose = () => {
-    setFormData(INITIAL_FORM_DATA);
-    setMeetingTimeSlots(INITIAL_FORM_DATA.meetingTimes);
-    setErrors({});
-    setFormError("");
-    onClose();
+    await onUpdateGroup(submitData);
   };
 
   const inputBase =
@@ -185,21 +160,20 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
       className="fixed inset-0 z-50 bg-black bg-opacity-50 p-4 sm:p-6 overflow-y-auto"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="create-group-title"
+      aria-labelledby="edit-group-title"
     >
       <div className="min-h-full flex items-start sm:items-center justify-center">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-          <div className="flex justify-bet
-          n items-center px-6 py-4 border-b border-gray-200 shrink-0">
+          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 shrink-0">
             <h3
-              id="create-group-title"
+              id="edit-group-title"
               className="text-xl font-bold text-gray-900"
             >
-              Create Study Group
+              Edit Study Group
             </h3>
             <button
               type="button"
-              onClick={handleClose}
+              onClick={onClose}
               disabled={loading}
               className="text-gray-500 hover:text-gray-700 text-2xl disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Close"
@@ -225,9 +199,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                     disabled={loading}
                     placeholder="e.g., Math Study Group"
                     aria-invalid={Boolean(errors?.name)}
-                    aria-describedby={
-                      errors?.name ? "group-name-error" : undefined
-                    }
+                    aria-describedby={errors?.name ? "group-name-error" : undefined}
                     className={`${inputBase} ${
                       errors?.name ? "border-red-300" : "border-gray-300"
                     }`}
@@ -252,9 +224,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                     disabled={loading}
                     placeholder="e.g., Mathematics, Physics"
                     aria-invalid={Boolean(errors?.subject)}
-                    aria-describedby={
-                      errors?.subject ? "subject-error" : undefined
-                    }
+                    aria-describedby={errors?.subject ? "subject-error" : undefined}
                     className={`${inputBase} ${
                       errors?.subject ? "border-red-300" : "border-gray-300"
                     }`}
@@ -367,7 +337,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                           onChange={(value) =>
                             handleTimeSlotChange(index, "startTime", value)
                           }
-                          format="hh:mm a"
+                          format="HH:mm"
                           className="w-full"
                         />
                       </div>
@@ -382,7 +352,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                           onChange={(value) =>
                             handleTimeSlotChange(index, "endTime", value)
                           }
-                          format="hh:mm a"
+                          format="HH:mm"
                           className="w-full"
                         />
                       </div>
@@ -431,7 +401,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
             <div className="flex gap-3 pt-6 mt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={handleClose}
+                onClick={onClose}
                 disabled={loading}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -442,7 +412,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
               >
-                {loading ? "Creating..." : "Create Group"}
+                {loading ? "Updating..." : "Update Group"}
               </button>
             </div>
           </form>
@@ -452,4 +422,4 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   );
 };
 
-export default CreateGroupModal;
+export default EditGroupModal;
