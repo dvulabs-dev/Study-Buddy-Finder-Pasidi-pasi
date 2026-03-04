@@ -1,4 +1,5 @@
-import { EnvelopeIcon, UserGroupIcon } from "@heroicons/react/24/outline";
+import { EnvelopeIcon, UserGroupIcon, BuildingLibraryIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
 
 const MyGroupsTab = ({
   mgLoading,
@@ -20,6 +21,8 @@ const MyGroupsTab = ({
   setShowDetailsModal,
   selectedGroup,
 }) => {
+  const [imagePreview, setImagePreview] = useState(null);
+  
   // Helper function to convert 24-hour time to 12-hour format with AM/PM
   const formatTime = (time24) => {
     if (!time24) return "";
@@ -27,6 +30,103 @@ const MyGroupsTab = ({
     const period = hours >= 12 ? "PM" : "AM";
     const hours12 = hours % 12 || 12;
     return `${String(hours12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
+  };
+
+  // Generate floor options based on building
+  const getFloorOptions = (building) => {
+    if (building === "Main Building") {
+      return [3, 4, 5, 6];
+    } else if (building === "New Building") {
+      return Array.from({ length: 12 }, (_, i) => i + 3); // Floors 3 to 14
+    }
+    return [];
+  };
+
+  // Generate lab options based on building and floor
+  const getLabOptions = (building, floor) => {
+    if (!building || !floor) return [];
+    
+    const prefix = building === "Main Building" ? "A" : "F";
+    
+    return Array.from({ length: 6 }, (_, i) => `${prefix}${floor}0${i + 1}`);
+  };
+
+  // Handle building change
+  const handleBuildingChange = (value) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      hallAllocation: {
+        building: value,
+        floor: "",
+        lab: "",
+      },
+    }));
+  };
+
+  // Handle floor change
+  const handleFloorChange = (value) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      hallAllocation: {
+        ...prev.hallAllocation,
+        floor: value,
+        lab: "",
+      },
+    }));
+  };
+
+  // Handle lab change
+  const handleLabChange = (value) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      hallAllocation: {
+        ...prev.hallAllocation,
+        lab: value,
+      },
+    }));
+  };
+
+  // Handle image file upload for edit modal
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setEditFormData((prev) => ({
+          ...prev,
+          image: reader.result,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image URL input for edit modal
+  const handleEditImageUrlChange = (e) => {
+    const url = e.target.value;
+    setEditFormData((prev) => ({
+      ...prev,
+      image: url,
+    }));
+    if (url) {
+      setImagePreview(url);
+    } else {
+      setImagePreview(null);
+    }
   };
 
   if (mgLoading) {
@@ -87,6 +187,20 @@ const MyGroupsTab = ({
                   </span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {group.hallAllocation && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+              <BuildingLibraryIcon className="w-3.5 h-3.5" />
+              Hall Allocation
+            </div>
+            <div className="text-xs text-gray-600">
+              <span className="inline-block px-2.5 py-1 bg-purple-50 border border-purple-100 rounded-full">
+                {group.hallAllocation.building} • Floor {group.hallAllocation.floor} • {group.hallAllocation.lab}
+              </span>
             </div>
           </div>
         )}
@@ -289,6 +403,107 @@ const MyGroupsTab = ({
                       <p className="mt-1 text-xs text-gray-500">Between 2 and 50 members</p>
                     </div>
 
+                    {/* Hall Allocation Section */}
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-700">
+                        Hall Allocation <span className="text-red-500">*</span>
+                      </label>
+                      
+                      <div className="space-y-3">
+                        {/* Building Selection */}
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Building</label>
+                          <select
+                            value={editFormData.hallAllocation?.building || ""}
+                            onChange={(e) => handleBuildingChange(e.target.value)}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          >
+                            <option value="">Select Building</option>
+                            <option value="Main Building">Main Building</option>
+                            <option value="New Building">New Building</option>
+                          </select>
+                        </div>
+
+                        {/* Floor Selection */}
+                        {editFormData.hallAllocation?.building && (
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Floor</label>
+                            <select
+                              value={editFormData.hallAllocation?.floor || ""}
+                              onChange={(e) => handleFloorChange(e.target.value)}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            >
+                              <option value="">Select Floor</option>
+                              {getFloorOptions(editFormData.hallAllocation.building).map((floor) => (
+                                <option key={floor} value={floor}>
+                                  Floor {floor}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Lab Selection */}
+                        {editFormData.hallAllocation?.building && editFormData.hallAllocation?.floor && (
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Lab</label>
+                            <select
+                              value={editFormData.hallAllocation?.lab || ""}
+                              onChange={(e) => handleLabChange(e.target.value)}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            >
+                              <option value="">Select Lab</option>
+                              {getLabOptions(editFormData.hallAllocation.building, editFormData.hallAllocation.floor).map((lab) => (
+                                <option key={lab} value={lab}>
+                                  {lab}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Group Image */}
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-700">Group Image (Optional)</label>
+                      
+                      {/* Image Preview */}
+                      {(imagePreview || editFormData.image) && (
+                        <div className="mb-3">
+                          <img
+                            src={imagePreview || editFormData.image}
+                            alt="Group preview"
+                            className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* File Upload */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEditImageChange}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                      />
+                      
+                      {/* Or URL Input */}
+                      <div className="mt-2">
+                        <label className="block text-xs text-gray-600 mb-1">Or enter image URL</label>
+                        <input
+                          type="url"
+                          value={editFormData.image || ""}
+                          onChange={handleEditImageUrlChange}
+                          placeholder="https://example.com/image.jpg"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+                      
+                      <p className="mt-1 text-xs text-gray-500">
+                        Upload a new image or provide a URL. Leave empty to keep current image.
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block mb-2 text-sm font-semibold text-gray-700">Meeting Schedule</label>
                       
@@ -340,7 +555,7 @@ const MyGroupsTab = ({
                               type="time"
                               id="startTimeInput"
                               defaultValue=""
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400"
                             />
                           </div>
                           <div>
@@ -349,7 +564,7 @@ const MyGroupsTab = ({
                               type="time"
                               id="endTimeInput"
                               defaultValue=""
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400"
                             />
                           </div>
                         </div>
@@ -476,6 +691,31 @@ const MyGroupsTab = ({
                             <span className="font-semibold">{slot.day}</span> {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedGroup.hallAllocation && (
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl">
+                      <div className="text-sm font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                        <BuildingLibraryIcon className="w-4 h-4" />
+                        Hall Allocation
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-purple-700">Building</span>
+                          <span className="font-bold text-purple-900">{selectedGroup.hallAllocation.building}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-purple-700">Floor</span>
+                          <span className="font-semibold text-purple-900">Floor {selectedGroup.hallAllocation.floor}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-purple-700">Lab</span>
+                          <span className="px-3 py-1 bg-purple-600 text-white rounded-lg font-bold text-sm">
+                            {selectedGroup.hallAllocation.lab}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}

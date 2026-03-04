@@ -3,13 +3,69 @@ const { model } = require("mongoose");
 const StudyGroup = require("../models/StudyGroup");
 const User = require("../models/User");
 
+// Helper function to check if two time slots overlap
+const doTimeSlotsOverlap = (slot1Start, slot1End, slot2Start, slot2End) => {
+    // Convert time strings to minutes for comparison
+    const timeToMinutes = (time) => {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
+    };
+    
+    const start1 = timeToMinutes(slot1Start);
+    const end1 = timeToMinutes(slot1End);
+    const start2 = timeToMinutes(slot2Start);
+    const end2 = timeToMinutes(slot2End);
+    
+    // Two time slots overlap if they share any time period
+    // Allow back-to-back bookings (one ends exactly when another starts)
+    // Overlap exists if: start1 < end2 AND start2 < end1
+    // This naturally allows adjacent times (e.g., 11:00-12:00 and 12:00-13:00)
+    return start1 < end2 && start2 < end1;
+};
+
+// Helper function to check for scheduling conflicts
+const checkSchedulingConflict = async (hallAllocation, meetingTimes, excludeGroupId = null) => {
+    // Find all groups with the same hall allocation
+    const query = {
+        'hallAllocation.building': hallAllocation.building,
+        'hallAllocation.floor': hallAllocation.floor,
+        'hallAllocation.lab': hallAllocation.lab,
+    };
+    
+    // If updating, exclude the current group from the check
+    if (excludeGroupId) {
+        query._id = { $ne: excludeGroupId };
+    }
+    
+    const conflictingGroups = await StudyGroup.find(query).select('name meetingTimes hallAllocation');
+    
+    // Check each meeting time for conflicts
+    for (const newSlot of meetingTimes) {
+        for (const existingGroup of conflictingGroups) {
+            for (const existingSlot of existingGroup.meetingTimes) {
+                // Check if same day and overlapping times
+                if (newSlot.day === existingSlot.day) {
+                    if (doTimeSlotsOverlap(newSlot.startTime, newSlot.endTime, existingSlot.startTime, existingSlot.endTime)) {
+                        return {
+                            conflict: true,
+                            message: `Scheduling conflict: Lab ${hallAllocation.lab} is already booked by "${existingGroup.name}" on ${newSlot.day} from ${existingSlot.startTime} to ${existingSlot.endTime}.`,
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    return { conflict: false };
+};
+
 // @desc    Create a new study group
 // @route   POST /api/studygroups
 // @access  Private
 
 exports.createStudyGroup = async (req, res) => {
  try {
-    const {name, description, subject, maxMembers, meetingTimes} = req.body;
+    const {name, description, subject, maxMembers, meetingTimes, hallAllocation, image} = req.body;
 
     //Validation
     if (!name || !subject){
@@ -26,6 +82,13 @@ exports.createStudyGroup = async (req, res) => {
         });
     }
 
+    if (!hallAllocation || !hallAllocation.building || !hallAllocation.floor || !hallAllocation.lab) {
+        return res.status(400)
+        .json({
+            message: "Please provide hall allocation (building, floor, and lab)",
+        });
+    }
+
     //Check if group with same name already exists
     const existingGroup = await StudyGroup.findOne({
         name: { $regex: `^${name}$`, $options: "i" },
@@ -37,16 +100,33 @@ exports.createStudyGroup = async (req, res) => {
         });
     }
 
+    // Check for scheduling conflicts
+    const conflictCheck = await checkSchedulingConflict(hallAllocation, meetingTimes);
+    if (conflictCheck.conflict) {
+        return res.status(400)
+        .json({
+            message: conflictCheck.message,
+        });
+    }
+
     //Create group
-    const studyGroup = await StudyGroup.create({
+    const groupData = {
         name,
         description,
         subject,
         creator: req.user.id,
         meetingTimes,
         maxMembers: maxMembers || 10,
-
-    });
+        hallAllocation,
+    };
+    
+    // Add image if provided, otherwise use default
+    if (image) {
+        groupData.image = image;
+    }
+    
+    const studyGroup = await StudyGroup.create(groupData);
+    
     //Add group to user's studyGroups
     await User.findByIdAndUpdate(req.user.id, {
         $push: { studyGroups: studyGroup._id },
@@ -119,11 +199,13 @@ exports.updateStudyGroup = async (req, res) => {
         }
 
         //update fields if provided
-        const {name, description, subject, meetingTimes, maxMembers} = req.body;
+        const {name, description, subject, meetingTimes, maxMembers, hallAllocation, image} = req.body;
 
         if (name!== undefined) studyGroup.name = name;
         if (description !== undefined) studyGroup.description = description;
         if (subject !== undefined) studyGroup.subject = subject;
+        if (image !== undefined) studyGroup.image = image;
+        
         if (meetingTimes !== undefined) {
             if (meetingTimes.length === 0) {
                 return res.status(400).json({
@@ -131,6 +213,29 @@ exports.updateStudyGroup = async (req, res) => {
                 });
             }
             studyGroup.meetingTimes = meetingTimes;
+        }
+        
+        // Update hall allocation if provided
+        if (hallAllocation !== undefined) {
+            if (!hallAllocation.building || !hallAllocation.floor || !hallAllocation.lab) {
+                return res.status(400).json({
+                    message: "Hall allocation must include building, floor, and lab",
+                });
+            }
+            studyGroup.hallAllocation = hallAllocation;
+        }
+        
+        // Check for scheduling conflicts (only if meetingTimes or hallAllocation changed)
+        if (hallAllocation !== undefined || meetingTimes !== undefined) {
+            const timesToCheck = meetingTimes !== undefined ? meetingTimes : studyGroup.meetingTimes;
+            const hallToCheck = hallAllocation !== undefined ? hallAllocation : studyGroup.hallAllocation;
+            
+            const conflictCheck = await checkSchedulingConflict(hallToCheck, timesToCheck, studyGroup._id);
+            if (conflictCheck.conflict) {
+                return res.status(400).json({
+                    message: conflictCheck.message,
+                });
+            }
         }
 
 

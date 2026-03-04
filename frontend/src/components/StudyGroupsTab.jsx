@@ -447,7 +447,8 @@ const StudyGroupsTab = ({
                 const availableSpots = maxMembers - memberCount;
                 const percentage = (memberCount / maxMembers) * 100;
                 const SubjectIcon = getSubjectIcon(group.subject);
-                const imageUrl = getGroupImage(group, index);
+                // Use the actual group image or fall back to the generated one
+                const imageUrl = group.image || getGroupImage(group, index);
 
                 return (
                   <div
@@ -497,6 +498,31 @@ const StudyGroupsTab = ({
                         <p className="mb-4 text-slate-600 line-clamp-2">
                           {group.description}
                         </p>
+                      )}
+
+                      {/* Hall Allocation */}
+                      {group.hallAllocation && (
+                        <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <BuildingLibraryIcon className="w-4 h-4 text-purple-600" />
+                            <span className="text-xs font-semibold text-purple-900 uppercase tracking-wide">
+                              Hall Allocation
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-bold text-purple-900">
+                              {group.hallAllocation.building}
+                            </span>
+                            <span className="text-purple-400">•</span>
+                            <span className="font-medium text-purple-800">
+                              Floor {group.hallAllocation.floor}
+                            </span>
+                            <span className="text-purple-400">•</span>
+                            <span className="px-2 py-0.5 bg-purple-600 text-white rounded-md font-bold text-xs">
+                              {group.hallAllocation.lab}
+                            </span>
+                          </div>
+                        </div>
                       )}
 
                       {/* Progress Bar */}
@@ -702,6 +728,34 @@ const StudyGroupsTab = ({
                 <p className="text-slate-600">No meeting schedule set</p>
               )}
             </div>
+
+            {/* Hall Allocation */}
+            {selectedGroupForMeeting.hallAllocation && (
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <BuildingLibraryIcon className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">
+                    Hall Allocation
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-purple-700">Building</span>
+                    <span className="font-bold text-purple-900">{selectedGroupForMeeting.hallAllocation.building}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-purple-700">Floor</span>
+                    <span className="font-semibold text-purple-900">Floor {selectedGroupForMeeting.hallAllocation.floor}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-purple-700">Lab</span>
+                    <span className="px-3 py-1 bg-purple-600 text-white rounded-lg font-bold text-sm">
+                      {selectedGroupForMeeting.hallAllocation.lab}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Group Info */}
             <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">

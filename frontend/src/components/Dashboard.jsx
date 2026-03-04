@@ -247,7 +247,17 @@ const Dashboard = () => {
       description: g.description || "", 
       subject: g.subject, 
       maxMembers: g.maxMembers, 
-      meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : []
+      meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : [],
+      hallAllocation: g.hallAllocation ? {
+        building: g.hallAllocation.building || "",
+        floor: g.hallAllocation.floor || "",
+        lab: g.hallAllocation.lab || "",
+      } : {
+        building: "",
+        floor: "",
+        lab: "",
+      },
+      image: g.image || "",
     });
     setShowEditModal(true);
   };
@@ -256,8 +266,32 @@ const Dashboard = () => {
     e.preventDefault();
     if (!editFormData.name.trim() || !editFormData.subject.trim()) { setMgError("Name and subject required"); return; }
     if (!editFormData.meetingTimes || editFormData.meetingTimes.length === 0) { setMgError("Please add at least one meeting time"); return; }
+    if (!editFormData.hallAllocation || !editFormData.hallAllocation.building || !editFormData.hallAllocation.floor || !editFormData.hallAllocation.lab) { 
+      setMgError("Please provide complete hall allocation (building, floor, and lab)"); 
+      return; 
+    }
     setMgActionLoading(selectedGroup._id); setMgError("");
-    try { await updateStudyGroup(selectedGroup._id, editFormData); alert("Updated!"); setShowEditModal(false); loadMyGroups(); fetchDashboardData(); }
+    try { 
+      const updateData = {
+        ...editFormData,
+        hallAllocation: {
+          building: editFormData.hallAllocation.building,
+          floor: Number(editFormData.hallAllocation.floor),
+          lab: editFormData.hallAllocation.lab,
+        }
+      };
+      
+      // Only include image if it's been changed
+      if (editFormData.image && editFormData.image !== selectedGroup.image) {
+        updateData.image = editFormData.image;
+      }
+      
+      await updateStudyGroup(selectedGroup._id, updateData); 
+      alert("Updated!"); 
+      setShowEditModal(false); 
+      loadMyGroups(); 
+      fetchDashboardData(); 
+    }
     catch (e) { setMgError(e.message || "Update failed"); }
     finally { setMgActionLoading(false); }
   };
