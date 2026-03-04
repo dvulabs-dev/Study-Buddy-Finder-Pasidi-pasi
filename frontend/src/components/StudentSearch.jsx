@@ -1,14 +1,21 @@
 import {useState} from "react";
+import { useNavigate } from "react-router-dom";
 import {searchStudentsBySubject, searchStudentsByAvailability } from "../services/userService";
 
 const StudentSearch = () => {
- const [searchType, setSearchType] = useState('simple'); //Simple search by subject or advanced search by subject + availability
+ const navigate = useNavigate();
+ const [searchType, setSearchType] = useState('simple');
  const [subject, setSubject] = useState('');
  const [availableTime, setAvailableTime] = useState({
-    weekdays: false,
-    weekend: false,
-    morning: false,
-    evening: false,
+    monday: false,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
+    startTime: '',
+    endTime: '',
  });
 
  const [students, setStudents] = useState([]);
@@ -16,6 +23,14 @@ const StudentSearch = () => {
  const [error, setError] = useState('');
  const [hasSearched, setHasSearched] = useState(false);
 
+ // Helper function to convert 24-hour time to 12-hour format with AM/PM
+ const formatTime = (time24) => {
+    if (!time24) return "";
+    const [hours, minutes] = time24.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
+    const hours12 = hours % 12 || 12;
+    return `${String(hours12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${period}`;
+ };
 
  //Handle simple search by subject only
  const handleSimpleSearch = async (e) => {
@@ -29,24 +44,32 @@ const StudentSearch = () => {
     setHasSearched(false);
     try {
         const data = await searchStudentsBySubject(subject);
-        setStudents(data.users);
+        setStudents(data.users || []);
         setHasSearched(true);
-        
     } catch (error) {
         setError(error.message || "Failed to search students");
     } finally {
         setLoading(false);
     }
-
  };
 
- //Adavanced search by subject + availability
+ //Advanced search by subject + availability
    const handleAdvancedSearch = async (e) => {
     e.preventDefault();
     if(!subject.trim()){
         setError("Please enter a subject to search");
         return;
     }
+    
+    const daysSelected = Object.keys(availableTime).some(day => 
+      ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(day) && availableTime[day]
+    );
+    
+    if (!daysSelected) {
+        setError("Please select at least one day");
+        return;
+    }
+    
     setLoading(true);
     setError('');
     setHasSearched(false);
@@ -56,7 +79,7 @@ const StudentSearch = () => {
             availableTime,
         });
 
-        setStudents(data.users);
+        setStudents(data.users || []);
         setHasSearched(true);
 
     } catch (error) {
@@ -64,7 +87,6 @@ const StudentSearch = () => {
     } finally {
         setLoading(false);
     }
-
    };
 
    const handleCheckboxChange = (field) => {
@@ -76,7 +98,15 @@ const StudentSearch = () => {
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Find Study Buddies</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Find Study Buddies</h2>
+                <button
+                    onClick={() => navigate('/dashboard')}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm font-medium"
+                >
+                    ← Back to Dashboard
+                </button>
+            </div>
 
             {/* Search Type Toggle */}
             <div className="flex gap-4 mb-6">
@@ -146,53 +176,64 @@ const StudentSearch = () => {
                              value={subject}
                              onChange={(e) => setSubject(e.target.value)}
                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            
                             />
-
                         </div>
-                        {/* Available Time Checkboxes */}
+                        
+                        {/* Available Time - Days & Times */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2" >
                                 Availability
                             </label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={availableTime.weekdays}
-                                    onChange={() => handleCheckboxChange('weekdays')}
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                />
-                                <span className="text-sm text-gray-700">Weekdays</span>
-                                </label>
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={availableTime.weekend}
-                                    onChange={() => handleCheckboxChange('weekend')}
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                />
-                                <span className="text-sm text-gray-700">Weekend</span>
-                                </label>
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={availableTime.morning}
-                                    onChange={() => handleCheckboxChange('morning')}
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                />
-                                <span className="text-sm text-gray-700">Morning</span>
-                                </label>
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={availableTime.evening}
-                                    onChange={() => handleCheckboxChange('evening')}
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                />
-                                <span className="text-sm text-gray-700">Evening</span>
-                                </label>
+                            
+                            <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                {/* Days Selection */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Days</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                                            <label key={day} className="flex items-center space-x-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={availableTime[day.toLowerCase()]}
+                                                    onChange={() => handleCheckboxChange(day.toLowerCase())}
+                                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                />
+                                                <span className="text-sm text-gray-700">{day}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
 
+                                {/* Time Selection */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Time Range</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs text-gray-700 mb-1">Start Time</label>
+                                            <input
+                                                type="time"
+                                                value={availableTime.startTime}
+                                                onChange={(e) => setAvailableTime((prev) => ({ ...prev, startTime: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            />
+                                            {availableTime.startTime && (
+                                                <p className="text-xs text-gray-500 mt-1">{formatTime(availableTime.startTime)}</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-700 mb-1">End Time</label>
+                                            <input
+                                                type="time"
+                                                value={availableTime.endTime}
+                                                onChange={(e) => setAvailableTime((prev) => ({ ...prev, endTime: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                            />
+                                            {availableTime.endTime && (
+                                                <p className="text-xs text-gray-500 mt-1">{formatTime(availableTime.endTime)}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -200,17 +241,11 @@ const StudentSearch = () => {
                          type="submit"
                          disabled={loading}
                          className="w-full px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition"
-                        
                         >
                             {loading ? 'Searching...': 'Search with Filters'}
-
                         </button>
-
                     </div>
-
                 </form>
-
-
             )}
 
            {/* Error message */}
@@ -257,11 +292,17 @@ const StudentSearch = () => {
                                     )}
                                 </div>
                                 {student.availableTime &&  (
-                                    <div className="text-xs text-gray-500">
-                                        {student.availableTime.weekdays && <span className="block">📅 Weekdays</span>}
-                                        {student.availableTime.weekend && <span className="block">📅 Weekend</span>}
-                                        {student.availableTime.morning && <span className="block">🌅 Morning</span>}
-                                        {student.availableTime.evening && <span className="block">🌆 Evening</span>}
+                                    <div className="text-xs text-gray-600 space-y-1">
+                                        <div className="font-semibold">Available:</div>
+                                        {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                                            student.availableTime[day] && (
+                                                <div key={day} className="capitalize">
+                                                    {day} {student.availableTime.startTime && student.availableTime.endTime && (
+                                                        <span>{formatTime(student.availableTime.startTime)}-{formatTime(student.availableTime.endTime)}</span>
+                                                    )}
+                                                </div>
+                                            )
+                                        ))}
                                     </div>   
                                 )}
                             </div>
