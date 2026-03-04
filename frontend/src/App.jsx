@@ -7,8 +7,8 @@ import AdminDashboard from "./components/AdminDashboard";
 import PrivateRoute from "./components/PrivateRoute";
 
 import StudentSearch from "./components/StudentSearch";
-import StudyGroupBrowser from "./components/StudyGroupBrowser";
-import MyGroups from "./components/MyGroups";
+// import StudyGroupBrowser from "./components/StudyGroupBrowser";
+// import MyGroups from "./components/MyGroups";
 
 
 
@@ -44,7 +44,7 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route
+          {/* <Route
            path="/study-groups"
            element={
               <PrivateRoute>
@@ -53,8 +53,8 @@ function App() {
            }
           
           
-          />
-          <Route
+          /> */}
+          {/* <Route
            path="/my-groups"
            element={
               <PrivateRoute>
@@ -63,7 +63,7 @@ function App() {
            }
           
           
-          />
+          /> */}
 
         </Routes>
       </Router>
