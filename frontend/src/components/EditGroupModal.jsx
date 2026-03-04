@@ -12,6 +12,7 @@ const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
   });
 
   const [meetingTimeSlots, setMeetingTimeSlots] = useState([]);
+  const [imageData, setImageData] = useState({ file: null, preview: null });
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
 
@@ -35,6 +36,13 @@ const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
               },
             ]
       );
+      // Set existing image if available
+      const backendUrl = 'http://localhost:5000';
+      if (group.image) {
+        setImageData({ file: null, preview: `${backendUrl}${group.image}` });
+      } else {
+        setImageData({ file: null, preview: null });
+      }
       setErrors({});
       setFormError("");
     }
@@ -104,6 +112,36 @@ const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
     });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, image: 'Please select an image file' }));
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB' }));
+        return;
+      }
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImageData({ file, preview: e.target.result });
+        setErrors(prev => ({ ...prev, image: null }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageData({ file: null, preview: null });
+    setErrors(prev => ({ ...prev, image: null }));
+  };
+
   const handleTimeSlotChange = (index, field, value) => {
     const updated = [...meetingTimeSlots];
     updated[index][field] = value;
@@ -144,12 +182,19 @@ const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
 
     if (Object.keys(nextErrors).length > 0) return;
 
-    const submitData = {
-      ...formData,
-      meetingTimes: meetingTimeSlots,
-    };
+    // Create FormData for file upload
+    const formDataWithFile = new FormData();
+    formDataWithFile.append('name', formData.name);
+    formDataWithFile.append('description', formData.description);
+    formDataWithFile.append('subject', formData.subject);
+    formDataWithFile.append('maxMembers', formData.maxMembers.toString());
+    formDataWithFile.append('meetingTimes', JSON.stringify(meetingTimeSlots));
+    
+    if (imageData.file) {
+      formDataWithFile.append('image', imageData.file);
+    }
 
-    await onUpdateGroup(submitData);
+    await onUpdateGroup(formDataWithFile);
   };
 
   const inputBase =
@@ -250,6 +295,81 @@ const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
                     rows="4"
                     className={`${inputBase} resize-none border-gray-300`}
                   />
+                </div>
+
+                {/* Group Image */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Group Image (Optional)
+                  </label>
+                  
+                  {imageData.preview ? (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <img
+                          src={imageData.preview}
+                          alt="Group preview"
+                          className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          disabled={loading}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 disabled:opacity-50"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('edit-group-image-upload').click()}
+                        disabled={loading}
+                        className="w-full text-sm bg-indigo-100 text-indigo-700 py-2 rounded hover:bg-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <label
+                        htmlFor="edit-group-image-upload"
+                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 disabled:cursor-not-allowed"
+                      >
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <svg
+                            className="w-8 h-8 mb-2 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                            />
+                          </svg>
+                          <p className="mb-1 text-sm text-gray-500">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+                  
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    disabled={loading}
+                    className="hidden"
+                    id="edit-group-image-upload"
+                  />
+                  
+                  {errors?.image && (
+                    <p className="text-xs text-red-700 mt-1">{errors.image}</p>
+                  )}
                 </div>
               </div>
 

@@ -23,6 +23,11 @@ const studyGroupSchema = new mongoose.Schema(
             trim: true,
             maxlength: [500, "Description can not exceed 500 Characters"],
         },
+        image: {
+            type: String,
+            default: "",
+            trim: true,
+        },
          maxMembers: {
             type: Number,
             default: 10,
