@@ -263,42 +263,20 @@ const Dashboard = () => {
     setShowEditModal(true);
   };
 
-  const mgUpdate = async (formDataWithFile) => {
-    if (!editFormData.hallAllocation || !editFormData.hallAllocation.building || !editFormData.hallAllocation.floor || !editFormData.hallAllocation.lab) { 
-      setMgError("Please provide complete hall allocation (building, floor, and lab)"); 
-      return; 
+  const mgUpdate = async (formData) => {
+    setMgActionLoading(selectedGroup._id);
+    setMgError("");
+    try {
+      await updateStudyGroup(selectedGroup._id, formData);
+      alert("Updated!");
+      setShowEditModal(false);
+      loadMyGroups();
+      fetchDashboardData();
+    } catch (e) {
+      setMgError(e.message || "Update failed");
+    } finally {
+      setMgActionLoading(null);
     }
-    setMgActionLoading(selectedGroup._id); setMgError("");
-    try { 
-      const updateData = {
-        ...editFormData,
-        hallAllocation: {
-          building: editFormData.hallAllocation.building,
-          floor: Number(editFormData.hallAllocation.floor),
-          lab: editFormData.hallAllocation.lab,
-        }
-      };
-      
-      // Only include image if it's been changed
-      if (editFormData.image && editFormData.image !== selectedGroup.image) {
-        updateData.image = editFormData.image;
-      }
-      
-      await updateStudyGroup(selectedGroup._id, updateData); 
-      alert("Updated!"); 
-      setShowEditModal(false); 
-      loadMyGroups(); 
-      fetchDashboardData(); 
-    }
-    try { 
-      await updateStudyGroup(selectedGroup._id, formDataWithFile); 
-      alert("Updated!"); 
-      setShowEditModal(false); 
-      loadMyGroups(); 
-      fetchDashboardData(); 
-    }
-    catch (e) { setMgError(e.message || "Update failed"); }
-    finally { setMgActionLoading(false); }
   };
 
   const mgDelete = async (id, name) => {
@@ -640,6 +618,11 @@ const Dashboard = () => {
         showDetailsModal={showDetailsModal}
         setShowDetailsModal={setShowDetailsModal}
         selectedGroup={selectedGroup}
+        showEditModal={showEditModal}
+        setShowEditModal={setShowEditModal}
+        editFormData={editFormData}
+        setEditFormData={setEditFormData}
+        mgUpdate={mgUpdate}
       />
     ),
     findbuddies: () => (

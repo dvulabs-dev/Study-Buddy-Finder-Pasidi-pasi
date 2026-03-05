@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import TimePicker from "react-time-picker";
-import "react-time-picker/dist/TimePicker.css";
-import "react-clock/dist/Clock.css";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 
 const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
   const [formData, setFormData] = useState({
@@ -15,6 +13,7 @@ const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
   const [imageData, setImageData] = useState({ file: null, preview: null });
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
+  const [openTimePicker, setOpenTimePicker] = useState({ index: null, type: null });
 
   // Initialize when group changes
   useEffect(() => {
@@ -446,35 +445,77 @@ const EditGroupModal = ({ isOpen, group, onClose, onUpdateGroup, loading }) => {
                       </select>
                     </div>
 
-                    {/* Start Time with Clock */}
+                    {/* Start Time & End Time with MUI Picker */}
                     <div className="grid grid-cols-2 gap-3 mb-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Start Time
                         </label>
-                        <TimePicker
-                          value={slot.startTime}
-                          onChange={(value) =>
-                            handleTimeSlotChange(index, "startTime", value)
-                          }
-                          format="HH:mm"
-                          className="w-full"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ index, type: 'start' })}
+                          disabled={loading}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-50 disabled:cursor-not-allowed text-left bg-white"
+                        >
+                          {slot.startTime || "Select Start Time"}
+                        </button>
+                        {openTimePicker.index === index && openTimePicker.type === 'start' && (
+                          <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                              <button
+                                type="button"
+                                onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                              >
+                                &times;
+                              </button>
+                              <StaticTimePickerLandscape
+                                value={slot.startTime || "09:00"}
+                                onChange={(newTime) => {
+                                  handleTimeSlotChange(index, "startTime", newTime);
+                                  setOpenTimePicker({ index: null, type: null });
+                                }}
+                                label="Select Start Time"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* End Time with Clock */}
+                      {/* End Time with MUI Picker */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           End Time
                         </label>
-                        <TimePicker
-                          value={slot.endTime}
-                          onChange={(value) =>
-                            handleTimeSlotChange(index, "endTime", value)
-                          }
-                          format="HH:mm"
-                          className="w-full"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ index, type: 'end' })}
+                          disabled={loading}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-50 disabled:cursor-not-allowed text-left bg-white"
+                        >
+                          {slot.endTime || "Select End Time"}
+                        </button>
+                        {openTimePicker.index === index && openTimePicker.type === 'end' && (
+                          <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                              <button
+                                type="button"
+                                onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                              >
+                                &times;
+                              </button>
+                              <StaticTimePickerLandscape
+                                value={slot.endTime || "11:00"}
+                                onChange={(newTime) => {
+                                  handleTimeSlotChange(index, "endTime", newTime);
+                                  setOpenTimePicker({ index: null, type: null });
+                                }}
+                                label="Select End Time"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

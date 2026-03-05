@@ -85,7 +85,11 @@ const StudyGroupsTab = ({
     // First, check if group has a custom uploaded image
     if (group.image) {
       const backendUrl = 'http://localhost:5000';
-      return `${backendUrl}${group.image}`;
+      // Only prefix backendUrl for relative paths (uploaded files); external URLs/base64 are used as-is
+      if (group.image.startsWith('/')) {
+        return `${backendUrl}${group.image}`;
+      }
+      return group.image;
     }
     
     // Fallback to subject-based images
@@ -500,8 +504,8 @@ const StudyGroupsTab = ({
                 const availableSpots = maxMembers - memberCount;
                 const percentage = (memberCount / maxMembers) * 100;
                 const SubjectIcon = getSubjectIcon(group.subject);
-                // Use the actual group image or fall back to the generated one
-                const imageUrl = group.image || getGroupImage(group, index);
+                // Always go through getGroupImage so relative paths get the backend URL prefix
+                const imageUrl = getGroupImage(group, index);
 
                 return (
                   <div

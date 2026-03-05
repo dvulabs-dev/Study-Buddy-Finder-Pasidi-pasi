@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { createStudyGroup } from "../services/studyGroupService";
 import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
+import {
+  UserGroupIcon,
+  XMarkIcon,
+  AcademicCapIcon,
+  InformationCircleIcon,
+} from "@heroicons/react/24/outline";
 
 const INITIAL_FORM_DATA = {
   name: "",
@@ -21,12 +27,12 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   const [meetingTimeSlots, setMeetingTimeSlots] = useState(
     INITIAL_FORM_DATA.meetingTimes
   );
-  const [imageData, setImageData] = useState({ file: null, preview: null });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [hallAllocation, setHallAllocation] = useState(INITIAL_FORM_DATA.hallAllocation);
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // Step tracker
   const [openTimePicker, setOpenTimePicker] = useState({ index: null, type: null }); // Track which time picker is open
@@ -166,36 +172,6 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
       delete next[name];
       return next;
     });
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({ ...prev, image: 'Please select an image file' }));
-        return;
-      }
-      
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB' }));
-        return;
-      }
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImageData({ file, preview: e.target.result });
-        setErrors(prev => ({ ...prev, image: null }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImageData({ file: null, preview: null });
-    setErrors(prev => ({ ...prev, image: null }));
   };
 
   const handleTimeSlotChange = (index, field, value) => {
@@ -344,23 +320,42 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
 
     setLoading(true);
     try {
-      const submitData = {
-        ...formData,
-        meetingTimes: meetingTimeSlots,
-        hallAllocation: {
+      let payload;
+      if (imageFile) {
+        // Send as FormData so multer stores the file on disk
+        const fd = new FormData();
+        fd.append('name', formData.name.trim());
+        fd.append('description', formData.description || '');
+        fd.append('subject', formData.subject.trim());
+        fd.append('maxMembers', String(formData.maxMembers));
+        fd.append('meetingTimes', JSON.stringify(meetingTimeSlots));
+        fd.append('hallAllocation', JSON.stringify({
           building: hallAllocation.building,
           floor: Number(hallAllocation.floor),
           lab: hallAllocation.lab,
-        },
-        image: imageUrl || undefined, // Send image URL if provided
-      };
+        }));
+        fd.append('image', imageFile);
+        payload = fd;
+      } else {
+        payload = {
+          ...formData,
+          meetingTimes: meetingTimeSlots,
+          hallAllocation: {
+            building: hallAllocation.building,
+            floor: Number(hallAllocation.floor),
+            lab: hallAllocation.lab,
+          },
+          image: imageUrl || undefined,
+        };
+      }
 
-      await createStudyGroup(formDataWithFile);
+      await createStudyGroup(payload);
       
       setFormData(INITIAL_FORM_DATA);
       setMeetingTimeSlots(INITIAL_FORM_DATA.meetingTimes);
       setHallAllocation(INITIAL_FORM_DATA.hallAllocation);
       setImageUrl("");
+      setImageFile(null);
       setImagePreview(null);
       setCurrentStep(1);
       onSuccess();
@@ -402,24 +397,18 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         setFormError('Please upload a valid image file');
         return;
       }
-      
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setFormError('Image size must be less than 5MB');
         return;
       }
-      
-      // Create preview
+      setImageFile(file);
+      setImageUrl(''); // clear any typed URL
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setImageUrl(reader.result); // Store base64 for sending to backend
-      };
+      reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
   };
@@ -427,12 +416,9 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   // Handle image URL input
   const handleImageUrlChange = (e) => {
     const url = e.target.value;
+    setImageFile(null); // clear any selected file
     setImageUrl(url);
-    if (url) {
-      setImagePreview(url);
-    } else {
-      setImagePreview(null);
-    }
+    setImagePreview(url || null);
   };
 
   const inputBase =
@@ -567,8 +553,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Group Name <span className="text-red-500">*</span>
-                  </span>
-                </label>
+                  </label>
                 <input
                   type="text"
                   name="name"
@@ -1001,7 +986,6 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
               </button>
             </div>
           </form>
-        </div>
       </div>
     </div>
   );

@@ -65,7 +65,19 @@ const checkSchedulingConflict = async (hallAllocation, meetingTimes, excludeGrou
 
 exports.createStudyGroup = async (req, res) => {
  try {
-    const {name, description, subject, maxMembers, meetingTimes, hallAllocation, image} = req.body;
+    const {name, description, subject, maxMembers, meetingTimes: meetingTimesRaw, hallAllocation: hallAllocationRaw, image} = req.body;
+
+    // Parse JSON strings when data arrives via FormData (multipart)
+    let meetingTimes = meetingTimesRaw;
+    if (typeof meetingTimesRaw === 'string') {
+        try { meetingTimes = JSON.parse(meetingTimesRaw); } catch { return res.status(400).json({ message: 'Invalid meetingTimes format' }); }
+    }
+    let hallAllocation = hallAllocationRaw;
+    if (typeof hallAllocationRaw === 'string') {
+        try { hallAllocation = JSON.parse(hallAllocationRaw); } catch { return res.status(400).json({ message: 'Invalid hallAllocation format' }); }
+    }
+    // If a file was uploaded via multer, use its path; otherwise fall back to body image field
+    const imageValue = req.file ? `/uploads/study-groups/${req.file.filename}` : (image || undefined);
 
     //Validation
     if (!name || !subject){
@@ -120,9 +132,9 @@ exports.createStudyGroup = async (req, res) => {
         hallAllocation,
     };
     
-    // Add image if provided, otherwise use default
-    if (image) {
-        groupData.image = image;
+    // Add image if provided (uploaded file takes priority over URL)
+    if (imageValue) {
+        groupData.image = imageValue;
     }
     
     const studyGroup = await StudyGroup.create(groupData);
@@ -647,13 +659,42 @@ exports.updateStudyGroup = async (req, res) => {
             }
         }
 
+        // Parse hallAllocation if it's a JSON string (from FormData)
+        const hallAllocationRaw = req.body.hallAllocation;
+        let hallAllocation;
+        if (hallAllocationRaw) {
+            try {
+                hallAllocation = typeof hallAllocationRaw === 'string'
+                    ? JSON.parse(hallAllocationRaw)
+                    : hallAllocationRaw;
+            } catch (parseError) {
+                return res.status(400).json({ message: "Invalid hallAllocation format" });
+            }
+            if (!hallAllocation.building || !hallAllocation.floor || !hallAllocation.lab) {
+                return res.status(400).json({
+                    message: "Hall allocation must include building, floor, and lab",
+                });
+            }
+        }
+
         // Update fields
         if (name) studyGroup.name = name;
         if (description !== undefined) studyGroup.description = description;
         if (subject) studyGroup.subject = subject;
-        if (maxMembers) studyGroup.maxMembers = maxMembers;
-        if (meetingTimes) studyGroup.meetingTimes = meetingTimes;
-        
+        if (maxMembers) studyGroup.maxMembers = Number(maxMembers);
+        if (meetingTimes && meetingTimes.length > 0) studyGroup.meetingTimes = meetingTimes;
+        if (hallAllocation) studyGroup.hallAllocation = hallAllocation;
+
+        // Check for scheduling conflicts if times or hall changed
+        if (hallAllocation || meetingTimes) {
+            const timesToCheck = meetingTimes || studyGroup.meetingTimes;
+            const hallToCheck = hallAllocation || studyGroup.hallAllocation;
+            const conflictCheck = await checkSchedulingConflict(hallToCheck, timesToCheck, studyGroup._id);
+            if (conflictCheck.conflict) {
+                return res.status(400).json({ message: conflictCheck.message });
+            }
+        }
+
         // Handle image upload if provided
         if (req.file) {
             // Delete old image file if exists
