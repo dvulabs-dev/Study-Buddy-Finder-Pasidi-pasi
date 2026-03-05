@@ -30,6 +30,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
 import CreateGroupModal from "./CreateGroupModal";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 
 const StudyGroupsTab = ({
   user,
@@ -52,6 +53,7 @@ const StudyGroupsTab = ({
   fetchDashboardData,
 }) => {
   const userId = user?._id || user?.id;
+  const [openTimePicker, setOpenTimePicker] = useState({ type: null }); // Track which time picker is open
 
   // Helper function to convert 24-hour time to 12-hour format with AM/PM
   const formatTime = (time24) => {
@@ -352,22 +354,67 @@ const StudyGroupsTab = ({
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Start Time (optional)</label>
-                  <input
-                    type="time"
-                    value={sgMeetingTime?.startTime || ''}
-                    onChange={(e) => setSgMeetingTime(prev => ({ ...prev, startTime: e.target.value }))}
-                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setOpenTimePicker({ type: 'start' })}
+                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-left font-medium text-gray-700"
+                  >
+                    {sgMeetingTime?.startTime || "Select Start Time"}
+                  </button>
+                  {openTimePicker.type === 'start' && (
+                    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ type: null })}
+                          className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                        >
+                          ×
+                        </button>
+                        <StaticTimePickerLandscape
+                          value={sgMeetingTime?.startTime || "09:00"}
+                          onChange={(newTime) => {
+                            setSgMeetingTime(prev => ({ ...prev, startTime: newTime }));
+                            setOpenTimePicker({ type: null });
+                          }}
+                          label="Select Start Time"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">End Time (optional)</label>
-                  <input
-                    type="time"
-                    value={sgMeetingTime?.endTime || ''}
-                    onChange={(e) => setSgMeetingTime(prev => ({ ...prev, endTime: e.target.value }))}
-                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setOpenTimePicker({ type: 'end' })}
+                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-left font-medium text-gray-700"
+                  >
+                    {sgMeetingTime?.endTime || "Select End Time"}
+                  </button>
+                  {openTimePicker.type === 'end' && (
+                    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ type: null })}
+                          className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                        >
+                          ×
+                        </button>
+                        <StaticTimePickerLandscape
+                          value={sgMeetingTime?.endTime || "17:00"}
+                          onChange={(newTime) => {
+                            setSgMeetingTime(prev => ({ ...prev, endTime: newTime }));
+                            setOpenTimePicker({ type: null });
+                          }}
+                          label="Select End Time"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
                 </div>
               </div>
 

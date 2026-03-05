@@ -1,6 +1,7 @@
 import {useState} from "react";
 import { useNavigate } from "react-router-dom";
 import {searchStudentsBySubject, searchStudentsByAvailability } from "../services/userService";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 
 const StudentSearch = () => {
  const navigate = useNavigate();
@@ -22,6 +23,7 @@ const StudentSearch = () => {
  const[loading, setLoading] = useState(false);
  const [error, setError] = useState('');
  const [hasSearched, setHasSearched] = useState(false);
+ const [openTimePicker, setOpenTimePicker] = useState({ type: null }); // Track which time picker is open
 
  // Helper function to convert 24-hour time to 12-hour format with AM/PM
  const formatTime = (time24) => {
@@ -210,24 +212,68 @@ const StudentSearch = () => {
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs text-gray-700 mb-1">Start Time</label>
-                                            <input
-                                                type="time"
-                                                value={availableTime.startTime}
-                                                onChange={(e) => setAvailableTime((prev) => ({ ...prev, startTime: e.target.value }))}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setOpenTimePicker({ type: 'start' })}
+                                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                                            >
+                                                {availableTime.startTime || "Select Start Time"}
+                                            </button>
+                                            {openTimePicker.type === 'start' && (
+                                                <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                                                    <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setOpenTimePicker({ type: null })}
+                                                            className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                        <StaticTimePickerLandscape
+                                                            value={availableTime.startTime || "09:00"}
+                                                            onChange={(newTime) => {
+                                                                setAvailableTime((prev) => ({ ...prev, startTime: newTime }));
+                                                                setOpenTimePicker({ type: null });
+                                                            }}
+                                                            label="Select Start Time"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                             {availableTime.startTime && (
                                                 <p className="text-xs text-gray-500 mt-1">{formatTime(availableTime.startTime)}</p>
                                             )}
                                         </div>
                                         <div>
                                             <label className="block text-xs text-gray-700 mb-1">End Time</label>
-                                            <input
-                                                type="time"
-                                                value={availableTime.endTime}
-                                                onChange={(e) => setAvailableTime((prev) => ({ ...prev, endTime: e.target.value }))}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setOpenTimePicker({ type: 'end' })}
+                                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                                            >
+                                                {availableTime.endTime || "Select End Time"}
+                                            </button>
+                                            {openTimePicker.type === 'end' && (
+                                                <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                                                    <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setOpenTimePicker({ type: null })}
+                                                            className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                        <StaticTimePickerLandscape
+                                                            value={availableTime.endTime || "17:00"}
+                                                            onChange={(newTime) => {
+                                                                setAvailableTime((prev) => ({ ...prev, endTime: newTime }));
+                                                                setOpenTimePicker({ type: null });
+                                                            }}
+                                                            label="Select End Time"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                             {availableTime.endTime && (
                                                 <p className="text-xs text-gray-500 mt-1">{formatTime(availableTime.endTime)}</p>
                                             )}

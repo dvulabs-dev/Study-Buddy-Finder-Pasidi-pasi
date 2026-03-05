@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createStudyGroup } from "../services/studyGroupService";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 
 const INITIAL_FORM_DATA = {
   name: "",
@@ -27,6 +28,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   const [imageUrl, setImageUrl] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // Step tracker
+  const [openTimePicker, setOpenTimePicker] = useState({ index: null, type: null }); // Track which time picker is open
 
   // Don't render if modal is closed
   if (!isOpen) {
@@ -772,38 +774,78 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                         </select>
                       </div>
 
-                      {/* Start Time with Clock */}
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Start Time
-                          </label>
-                          <input
-                            type="time"
-                            value={slot.startTime}
-                            onChange={(e) =>
-                              handleTimeSlotChange(index, "startTime", e.target.value)
-                            }
-                            disabled={loading}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          />
-                        </div>
+                      {/* Start Time with Material-UI Clock */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Start Time
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ index, type: 'start' })}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed text-left bg-white"
+                        >
+                          {slot.startTime || "Select Start Time"}
+                        </button>
+                        {openTimePicker.index === index && openTimePicker.type === 'start' && (
+                          <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                              <button
+                                type="button"
+                                onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                              >
+                                ×
+                              </button>
+                              <StaticTimePickerLandscape
+                                value={slot.startTime}
+                                onChange={(newTime) => {
+                                  handleTimeSlotChange(index, "startTime", newTime);
+                                  setOpenTimePicker({ index: null, type: null });
+                                }}
+                                disabled={loading}
+                                label="Select Start Time"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-                        {/* End Time with Clock */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            End Time
-                          </label>
-                          <input
-                            type="time"
-                            value={slot.endTime}
-                            onChange={(e) =>
-                              handleTimeSlotChange(index, "endTime", e.target.value)
-                            }
-                            disabled={loading}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          />
-                        </div>
+                      {/* End Time with Material-UI Clock */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          End Time
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ index, type: 'end' })}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed text-left bg-white"
+                        >
+                          {slot.endTime || "Select End Time"}
+                        </button>
+                        {openTimePicker.index === index && openTimePicker.type === 'end' && (
+                          <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                              <button
+                                type="button"
+                                onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                              >
+                                ×
+                              </button>
+                              <StaticTimePickerLandscape
+                                value={slot.endTime}
+                                onChange={(newTime) => {
+                                  handleTimeSlotChange(index, "endTime", newTime);
+                                  setOpenTimePicker({ index: null, type: null });
+                                }}
+                                disabled={loading}
+                                label="Select End Time"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Remove Button */}

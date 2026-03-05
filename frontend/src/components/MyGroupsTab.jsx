@@ -1,5 +1,6 @@
 import { EnvelopeIcon, UserGroupIcon, BuildingLibraryIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 
 const MyGroupsTab = ({
   mgLoading,
@@ -22,6 +23,8 @@ const MyGroupsTab = ({
   selectedGroup,
 }) => {
   const [imagePreview, setImagePreview] = useState(null);
+  const [openTimePicker, setOpenTimePicker] = useState({ type: null }); // Track which time picker is open
+  const [newTimeSlot, setNewTimeSlot] = useState({ day: "", startTime: "", endTime: "" }); // Track new time slot being added
   
   // Helper function to convert 24-hour time to 12-hour format with AM/PM
   const formatTime = (time24) => {
@@ -537,8 +540,8 @@ const MyGroupsTab = ({
                         <div>
                           <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Day</label>
                           <select
-                            id="daySelect"
-                            defaultValue=""
+                            value={newTimeSlot.day}
+                            onChange={(e) => setNewTimeSlot((prev) => ({ ...prev, day: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                           >
                             <option value="">Select a day</option>
@@ -551,42 +554,86 @@ const MyGroupsTab = ({
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Start</label>
-                            <input
-                              type="time"
-                              id="startTimeInput"
-                              defaultValue=""
-                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400"
-                            />
+                            <button
+                              type="button"
+                              onClick={() => setOpenTimePicker({ type: 'start' })}
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                            >
+                              {newTimeSlot.startTime || "Select Start Time"}
+                            </button>
+                            {openTimePicker.type === 'start' && (
+                              <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                                <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenTimePicker({ type: null })}
+                                    className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                                  >
+                                    ×
+                                  </button>
+                                  <StaticTimePickerLandscape
+                                    value={newTimeSlot.startTime || "09:00"}
+                                    onChange={(newTime) => {
+                                      setNewTimeSlot((prev) => ({ ...prev, startTime: newTime }));
+                                      setOpenTimePicker({ type: null });
+                                    }}
+                                    label="Select Start Time"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                           <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">End</label>
-                            <input
-                              type="time"
-                              id="endTimeInput"
-                              defaultValue=""
-                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400"
-                            />
+                            <button
+                              type="button"
+                              onClick={() => setOpenTimePicker({ type: 'end' })}
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                            >
+                              {newTimeSlot.endTime || "Select End Time"}
+                            </button>
+                            {openTimePicker.type === 'end' && (
+                              <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                                <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenTimePicker({ type: null })}
+                                    className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                                  >
+                                    ×
+                                  </button>
+                                  <StaticTimePickerLandscape
+                                    value={newTimeSlot.endTime || "11:00"}
+                                    onChange={(newTime) => {
+                                      setNewTimeSlot((prev) => ({ ...prev, endTime: newTime }));
+                                      setOpenTimePicker({ type: null });
+                                    }}
+                                    label="Select End Time"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => {
-                            const day = document.getElementById("daySelect").value;
-                            const startTime = document.getElementById("startTimeInput").value;
-                            const endTime = document.getElementById("endTimeInput").value;
-                            
-                            if (day && startTime && endTime) {
+                            if (newTimeSlot.day && newTimeSlot.startTime && newTimeSlot.endTime) {
                               setEditFormData((p) => ({
                                 ...p,
-                                meetingTimes: [...(p.meetingTimes || []), { day, startTime, endTime }]
+                                meetingTimes: [...(p.meetingTimes || []), { 
+                                  day: newTimeSlot.day, 
+                                  startTime: newTimeSlot.startTime, 
+                                  endTime: newTimeSlot.endTime 
+                                }]
                               }));
-                              document.getElementById("daySelect").value = "";
-                              document.getElementById("startTimeInput").value = "";
-                              document.getElementById("endTimeInput").value = "";
+                              // Reset the form
+                              setNewTimeSlot({ day: "", startTime: "", endTime: "" });
                             }
                           }}
-                          className="w-full px-3 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                          disabled={!newTimeSlot.day || !newTimeSlot.startTime || !newTimeSlot.endTime}
+                          className="w-full px-3 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                           + Add Time Slot
                         </button>
