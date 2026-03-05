@@ -415,7 +415,6 @@ const StudyGroupsTab = ({
                     </div>
                   )}
                 </div>
-                </div>
               </div>
 
               <button
