@@ -82,6 +82,13 @@ const StudyGroupsTab = ({
 
   // Get realistic image based on group subject/name
   const getGroupImage = (group, index) => {
+    // First, check if group has a custom uploaded image
+    if (group.image) {
+      const backendUrl = 'http://localhost:5000';
+      return `${backendUrl}${group.image}`;
+    }
+    
+    // Fallback to subject-based images
     const subject = group.subject?.toLowerCase() || "";
     const name = group.name?.toLowerCase() || "";
     

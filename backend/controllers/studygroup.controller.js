@@ -555,6 +555,136 @@ exports.deleteStudyGroup = async (req, res) => {
      }
 };
 
+// @desc    Update study group image
+// @route   PUT /api/studygroups/:id/image
+// @access  Private (only creator)
+exports.updateStudyGroupImage = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Please select an image file",
+            });
+        }
+
+        const studyGroup = await StudyGroup.findById(id);
+        
+        if (!studyGroup) {
+            return res.status(404).json({
+                message: "Study group not found",
+            });
+        }
+
+        // Check if user is the creator
+        if (studyGroup.creator.toString() !== req.user.id) {
+            return res.status(403).json({
+                message: "You can only update your own study groups",
+            });
+        }
+
+        // Delete old image file if exists
+        if (studyGroup.image) {
+            const fs = require('fs');
+            const path = require('path');
+            const oldImagePath = path.join(__dirname, '..', studyGroup.image);
+            if (fs.existsSync(oldImagePath)) {
+                fs.unlinkSync(oldImagePath);
+            }
+        }
+
+        // Update with new image
+        const imagePath = `/uploads/study-groups/${req.file.filename}`;
+        studyGroup.image = imagePath;
+        studyGroup.updatedAt = Date.now();
+        await studyGroup.save();
+
+        res.status(200).json({
+            message: "Study group image updated successfully",
+            image: imagePath,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: error.message,
+        });
+    }
+};
+
+// @desc    Update study group details
+// @route   PUT /api/studygroups/:id
+// @access  Private (only creator)
+exports.updateStudyGroup = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, subject, maxMembers, meetingTimes: meetingTimesRaw } = req.body;
+
+        const studyGroup = await StudyGroup.findById(id);
+        
+        if (!studyGroup) {
+            return res.status(404).json({
+                message: "Study group not found",
+            });
+        }
+
+        // Check if user is the creator
+        if (studyGroup.creator.toString() !== req.user.id) {
+            return res.status(403).json({
+                message: "You can only update your own study groups",
+            });
+        }
+
+        // Parse meetingTimes if it's a JSON string (from FormData)
+        let meetingTimes;
+        if (meetingTimesRaw) {
+            try {
+                meetingTimes = typeof meetingTimesRaw === 'string' 
+                    ? JSON.parse(meetingTimesRaw) 
+                    : meetingTimesRaw;
+            } catch (parseError) {
+                return res.status(400).json({
+                    message: "Invalid meetingTimes format",
+                });
+            }
+        }
+
+        // Update fields
+        if (name) studyGroup.name = name;
+        if (description !== undefined) studyGroup.description = description;
+        if (subject) studyGroup.subject = subject;
+        if (maxMembers) studyGroup.maxMembers = maxMembers;
+        if (meetingTimes) studyGroup.meetingTimes = meetingTimes;
+        
+        // Handle image upload if provided
+        if (req.file) {
+            // Delete old image file if exists
+            if (studyGroup.image) {
+                const fs = require('fs');
+                const path = require('path');
+                const oldImagePath = path.join(__dirname, '..', studyGroup.image);
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
+            studyGroup.image = `/uploads/study-groups/${req.file.filename}`;
+        }
+        
+        studyGroup.updatedAt = Date.now();
+        await studyGroup.save();
+
+        // Populate creator info
+        await studyGroup.populate("creator", "name email degree year");
+
+        res.status(200).json({
+            message: "Study group updated successfully",
+            studyGroup,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: error.message,
+        });
+    }
+};
+
 module.exports = exports;
 
 

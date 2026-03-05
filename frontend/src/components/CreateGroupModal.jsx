@@ -21,6 +21,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   const [meetingTimeSlots, setMeetingTimeSlots] = useState(
     INITIAL_FORM_DATA.meetingTimes
   );
+  const [imageData, setImageData] = useState({ file: null, preview: null });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
@@ -165,6 +166,36 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
       delete next[name];
       return next;
     });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, image: 'Please select an image file' }));
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB' }));
+        return;
+      }
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImageData({ file, preview: e.target.result });
+        setErrors(prev => ({ ...prev, image: null }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageData({ file: null, preview: null });
+    setErrors(prev => ({ ...prev, image: null }));
   };
 
   const handleTimeSlotChange = (index, field, value) => {
@@ -324,7 +355,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
         image: imageUrl || undefined, // Send image URL if provided
       };
 
-      await createStudyGroup(submitData);
+      await createStudyGroup(formDataWithFile);
       
       setFormData(INITIAL_FORM_DATA);
       setMeetingTimeSlots(INITIAL_FORM_DATA.meetingTimes);
@@ -405,35 +436,74 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const inputBase =
-    "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed";
+    "w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed transition-all duration-200";
+
+  const days = [
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+  ];
+
+  // Helper function to format time for display
+  const formatTimeForDisplay = (time) => {
+    if (!time) return "";
+    const [hours, minutes] = time.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+
+  // Helper function to get time of day icon
+  const getTimeOfDayIcon = (time) => {
+    if (!time) return <ClockIcon className="w-3 h-3" />;
+    const hour = parseInt(time.split(":")[0]);
+    if (hour < 12) return <SunIcon className="w-3 h-3 text-yellow-500" />;
+    if (hour < 17) return <SunIcon className="w-3 h-3 text-orange-500" />;
+    return <MoonIcon className="w-3 h-3 text-indigo-500" />;
+  };
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black bg-opacity-50 p-4 sm:p-6 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black bg-opacity-60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto flex items-start sm:items-center justify-center transition-all duration-300"
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-group-title"
+      onClick={(e) => e.target === e.currentTarget && !loading && handleClose()}
     >
-      <div className="min-h-full flex items-start sm:items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-          <div className="flex justify-bet
-          n items-center px-6 py-4 border-b border-gray-200 shrink-0">
-            <h3
-              id="create-group-title"
-              className="text-xl font-bold text-gray-900"
-            >
-              Create Study Group
-            </h3>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transform transition-all duration-300 scale-100 animate-in fade-in slide-in-from-bottom-4">
+        {/* Header with gradient and image */}
+        <div className="relative overflow-hidden rounded-t-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+          <div className="absolute inset-0 opacity-10">
+            <img 
+              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80"
+              alt=""
+              className="object-cover w-full h-full"
+            />
+          </div>
+          <div className="relative px-6 py-4 flex justify-between items-center">
+            <div>
+              <h3
+                id="create-group-title"
+                className="text-xl font-bold text-white flex items-center gap-2"
+              >
+                <UserGroupIcon className="w-6 h-6" />
+                Create New Study Group
+              </h3>
+              <p className="text-sm text-indigo-100 mt-1">
+                Start your learning journey by creating a study group
+              </p>
+            </div>
             <button
               type="button"
               onClick={handleClose}
               disabled={loading}
-              className="text-gray-500 hover:text-gray-700 text-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-white/80 hover:text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Close"
             >
-              ×
+              <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
+        </div>
 
           <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); }} className="p-6 overflow-y-auto flex-1">
             {/* Step Indicator */}
@@ -497,55 +567,57 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Group Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    disabled={loading}
-                    placeholder="e.g., Math Study Group"
-                    aria-invalid={Boolean(errors?.name)}
-                    aria-describedby={
-                      errors?.name ? "group-name-error" : undefined
-                    }
-                    className={`${inputBase} ${
-                      errors?.name ? "border-red-300" : "border-gray-300"
-                    }`}
-                  />
-                  {errors?.name && (
-                    <p id="group-name-error" className="text-xs text-red-700 mt-1">
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="e.g., Advanced Calculus Study Group"
+                  aria-invalid={Boolean(errors?.name)}
+                  aria-describedby={errors?.name ? "group-name-error" : undefined}
+                  className={`${inputBase} ${
+                    errors?.name ? "border-red-300 focus:ring-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors?.name && (
+                  <p id="group-name-error" className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <XMarkIcon className="w-3 h-3" />
+                    {errors.name}
+                  </p>
+                )}
+              </div>
 
-                {/* Subject */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+              {/* Subject */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <span className="flex items-center gap-2">
+                    <AcademicCapIcon className="w-4 h-4 text-gray-500" />
                     Subject <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    disabled={loading}
-                    placeholder="e.g., Mathematics, Physics"
-                    aria-invalid={Boolean(errors?.subject)}
-                    aria-describedby={
-                      errors?.subject ? "subject-error" : undefined
-                    }
-                    className={`${inputBase} ${
-                      errors?.subject ? "border-red-300" : "border-gray-300"
-                    }`}
-                  />
-                  {errors?.subject && (
-                    <p id="subject-error" className="text-xs text-red-700 mt-1">
-                      {errors.subject}
-                    </p>
-                  )}
-                </div>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  disabled={loading}
+                  placeholder="e.g., Mathematics, Physics, Computer Science"
+                  aria-invalid={Boolean(errors?.subject)}
+                  aria-describedby={errors?.subject ? "subject-error" : undefined}
+                  className={`${inputBase} ${
+                    errors?.subject ? "border-red-300 focus:ring-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors?.subject && (
+                  <p id="subject-error" className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <XMarkIcon className="w-3 h-3" />
+                    {errors.subject}
+                  </p>
+                )}
+              </div>
 
                 {/* Max Members */}
                 <div>
@@ -566,8 +638,8 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                         ? "max-members-error"
                         : "max-members-hint"
                     }
-                    className={`${inputBase} ${
-                      errors?.maxMembers ? "border-red-300" : "border-gray-300"
+                    className={`${inputBase} pl-10 ${
+                      errors?.maxMembers ? "border-red-300 focus:ring-red-500" : "border-gray-300"
                     }`}
                   />
                   {errors?.maxMembers ? (
@@ -881,12 +953,13 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
             )}
 
-            {/* Form Error */}
-            {formError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                {formError}
-              </div>
-            )}
+          {/* Form Error */}
+          {formError && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-center gap-2">
+              <InformationCircleIcon className="w-5 h-5 flex-shrink-0" />
+              {formError}
+            </div>
+          )}
 
             {/* Buttons */}
             <div className="flex gap-3 pt-6 mt-6 border-t border-gray-200">

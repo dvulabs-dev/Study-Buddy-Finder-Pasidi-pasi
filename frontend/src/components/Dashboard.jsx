@@ -39,6 +39,7 @@ import StudyGroupsTab from "./StudyGroupsTab";
 import MyGroupsTab from "./MyGroupsTab";
 import FindBuddiesTab from "./FindBuddiesTab";
 import FriendsTab from "./FriendsTab";
+import EditGroupModal from "./EditGroupModal";
 import {
   MagnifyingGlassIcon,
   UserGroupIcon,
@@ -262,10 +263,7 @@ const Dashboard = () => {
     setShowEditModal(true);
   };
 
-  const mgUpdate = async (e) => {
-    e.preventDefault();
-    if (!editFormData.name.trim() || !editFormData.subject.trim()) { setMgError("Name and subject required"); return; }
-    if (!editFormData.meetingTimes || editFormData.meetingTimes.length === 0) { setMgError("Please add at least one meeting time"); return; }
+  const mgUpdate = async (formDataWithFile) => {
     if (!editFormData.hallAllocation || !editFormData.hallAllocation.building || !editFormData.hallAllocation.floor || !editFormData.hallAllocation.lab) { 
       setMgError("Please provide complete hall allocation (building, floor, and lab)"); 
       return; 
@@ -287,6 +285,13 @@ const Dashboard = () => {
       }
       
       await updateStudyGroup(selectedGroup._id, updateData); 
+      alert("Updated!"); 
+      setShowEditModal(false); 
+      loadMyGroups(); 
+      fetchDashboardData(); 
+    }
+    try { 
+      await updateStudyGroup(selectedGroup._id, formDataWithFile); 
       alert("Updated!"); 
       setShowEditModal(false); 
       loadMyGroups(); 
@@ -595,6 +600,7 @@ const Dashboard = () => {
         getInitials={getInitials}
         groupColors={groupColors}
         buddyColors={buddyColors}
+        myFriendsList={myFriendsList}
       />
     ),
     studygroups: () => (
@@ -630,12 +636,7 @@ const Dashboard = () => {
         mgOpenEdit={mgOpenEdit}
         mgDelete={mgDelete}
         mgLeave={mgLeave}
-        mgUpdate={mgUpdate}
         openInviteModal={openInviteModal}
-        showEditModal={showEditModal}
-        setShowEditModal={setShowEditModal}
-        editFormData={editFormData}
-        setEditFormData={setEditFormData}
         showDetailsModal={showDetailsModal}
         setShowDetailsModal={setShowDetailsModal}
         selectedGroup={selectedGroup}
@@ -846,6 +847,15 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Group Modal */}
+      <EditGroupModal
+        isOpen={showEditModal}
+        group={selectedGroup}
+        onClose={() => setShowEditModal(false)}
+        onUpdateGroup={mgUpdate}
+        loading={Boolean(mgActionLoading)}
+      />
 
       <style>{`.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}`}</style>
     </div>
