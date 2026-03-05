@@ -248,22 +248,35 @@ const Dashboard = () => {
       description: g.description || "", 
       subject: g.subject, 
       maxMembers: g.maxMembers, 
-      meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : []
+      meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : [],
+      hallAllocation: g.hallAllocation ? {
+        building: g.hallAllocation.building || "",
+        floor: g.hallAllocation.floor || "",
+        lab: g.hallAllocation.lab || "",
+      } : {
+        building: "",
+        floor: "",
+        lab: "",
+      },
+      image: g.image || "",
     });
     setShowEditModal(true);
   };
 
-  const mgUpdate = async (formDataWithFile) => {
-    setMgActionLoading(selectedGroup._id); setMgError("");
-    try { 
-      await updateStudyGroup(selectedGroup._id, formDataWithFile); 
-      alert("Updated!"); 
-      setShowEditModal(false); 
-      loadMyGroups(); 
-      fetchDashboardData(); 
+  const mgUpdate = async (formData) => {
+    setMgActionLoading(selectedGroup._id);
+    setMgError("");
+    try {
+      await updateStudyGroup(selectedGroup._id, formData);
+      alert("Updated!");
+      setShowEditModal(false);
+      loadMyGroups();
+      fetchDashboardData();
+    } catch (e) {
+      setMgError(e.message || "Update failed");
+    } finally {
+      setMgActionLoading(null);
     }
-    catch (e) { setMgError(e.message || "Update failed"); }
-    finally { setMgActionLoading(false); }
   };
 
   const mgDelete = async (id, name) => {
@@ -605,6 +618,11 @@ const Dashboard = () => {
         showDetailsModal={showDetailsModal}
         setShowDetailsModal={setShowDetailsModal}
         selectedGroup={selectedGroup}
+        showEditModal={showEditModal}
+        setShowEditModal={setShowEditModal}
+        editFormData={editFormData}
+        setEditFormData={setEditFormData}
+        mgUpdate={mgUpdate}
       />
     ),
     findbuddies: () => (

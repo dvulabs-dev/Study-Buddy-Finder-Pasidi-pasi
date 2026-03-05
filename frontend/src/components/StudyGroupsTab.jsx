@@ -30,6 +30,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
 import CreateGroupModal from "./CreateGroupModal";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 
 const StudyGroupsTab = ({
   user,
@@ -52,6 +53,7 @@ const StudyGroupsTab = ({
   fetchDashboardData,
 }) => {
   const userId = user?._id || user?.id;
+  const [openTimePicker, setOpenTimePicker] = useState({ type: null }); // Track which time picker is open
 
   // Helper function to convert 24-hour time to 12-hour format with AM/PM
   const formatTime = (time24) => {
@@ -83,7 +85,11 @@ const StudyGroupsTab = ({
     // First, check if group has a custom uploaded image
     if (group.image) {
       const backendUrl = 'http://localhost:5000';
-      return `${backendUrl}${group.image}`;
+      // Only prefix backendUrl for relative paths (uploaded files); external URLs/base64 are used as-is
+      if (group.image.startsWith('/')) {
+        return `${backendUrl}${group.image}`;
+      }
+      return group.image;
     }
     
     // Fallback to subject-based images
@@ -359,22 +365,66 @@ const StudyGroupsTab = ({
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Start Time (optional)</label>
-                  <input
-                    type="time"
-                    value={sgMeetingTime?.startTime || ''}
-                    onChange={(e) => setSgMeetingTime(prev => ({ ...prev, startTime: e.target.value }))}
-                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setOpenTimePicker({ type: 'start' })}
+                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-left font-medium text-gray-700"
+                  >
+                    {sgMeetingTime?.startTime || "Select Start Time"}
+                  </button>
+                  {openTimePicker.type === 'start' && (
+                    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ type: null })}
+                          className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                        >
+                          ×
+                        </button>
+                        <StaticTimePickerLandscape
+                          value={sgMeetingTime?.startTime || "09:00"}
+                          onChange={(newTime) => {
+                            setSgMeetingTime(prev => ({ ...prev, startTime: newTime }));
+                            setOpenTimePicker({ type: null });
+                          }}
+                          label="Select Start Time"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">End Time (optional)</label>
-                  <input
-                    type="time"
-                    value={sgMeetingTime?.endTime || ''}
-                    onChange={(e) => setSgMeetingTime(prev => ({ ...prev, endTime: e.target.value }))}
-                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setOpenTimePicker({ type: 'end' })}
+                    className="w-full px-4 py-3 transition-all duration-300 bg-white border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-left font-medium text-gray-700"
+                  >
+                    {sgMeetingTime?.endTime || "Select End Time"}
+                  </button>
+                  {openTimePicker.type === 'end' && (
+                    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ type: null })}
+                          className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                        >
+                          ×
+                        </button>
+                        <StaticTimePickerLandscape
+                          value={sgMeetingTime?.endTime || "17:00"}
+                          onChange={(newTime) => {
+                            setSgMeetingTime(prev => ({ ...prev, endTime: newTime }));
+                            setOpenTimePicker({ type: null });
+                          }}
+                          label="Select End Time"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -454,6 +504,7 @@ const StudyGroupsTab = ({
                 const availableSpots = maxMembers - memberCount;
                 const percentage = (memberCount / maxMembers) * 100;
                 const SubjectIcon = getSubjectIcon(group.subject);
+                // Always go through getGroupImage so relative paths get the backend URL prefix
                 const imageUrl = getGroupImage(group, index);
 
                 return (
@@ -504,6 +555,31 @@ const StudyGroupsTab = ({
                         <p className="mb-4 text-slate-600 line-clamp-2">
                           {group.description}
                         </p>
+                      )}
+
+                      {/* Hall Allocation */}
+                      {group.hallAllocation && (
+                        <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <BuildingLibraryIcon className="w-4 h-4 text-purple-600" />
+                            <span className="text-xs font-semibold text-purple-900 uppercase tracking-wide">
+                              Hall Allocation
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-bold text-purple-900">
+                              {group.hallAllocation.building}
+                            </span>
+                            <span className="text-purple-400">•</span>
+                            <span className="font-medium text-purple-800">
+                              Floor {group.hallAllocation.floor}
+                            </span>
+                            <span className="text-purple-400">•</span>
+                            <span className="px-2 py-0.5 bg-purple-600 text-white rounded-md font-bold text-xs">
+                              {group.hallAllocation.lab}
+                            </span>
+                          </div>
+                        </div>
                       )}
 
                       {/* Progress Bar */}
@@ -709,6 +785,34 @@ const StudyGroupsTab = ({
                 <p className="text-slate-600">No meeting schedule set</p>
               )}
             </div>
+
+            {/* Hall Allocation */}
+            {selectedGroupForMeeting.hallAllocation && (
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <BuildingLibraryIcon className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">
+                    Hall Allocation
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-purple-700">Building</span>
+                    <span className="font-bold text-purple-900">{selectedGroupForMeeting.hallAllocation.building}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-purple-700">Floor</span>
+                    <span className="font-semibold text-purple-900">Floor {selectedGroupForMeeting.hallAllocation.floor}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-purple-700">Lab</span>
+                    <span className="px-3 py-1 bg-purple-600 text-white rounded-lg font-bold text-sm">
+                      {selectedGroupForMeeting.hallAllocation.lab}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Group Info */}
             <div className="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200">

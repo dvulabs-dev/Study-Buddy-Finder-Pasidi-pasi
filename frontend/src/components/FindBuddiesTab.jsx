@@ -1,3 +1,6 @@
+import { useState } from "react";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
+
 const FindBuddiesTab = ({
   fbSearchType,
   setFbSearchType,
@@ -15,7 +18,10 @@ const FindBuddiesTab = ({
   renderFriendButton,
   getInitials,
   buddyColors,
-}) => (
+}) => {
+  const [openTimePicker, setOpenTimePicker] = useState({ type: null }); // Track which time picker is open
+  
+  return (
   <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
     <h2 className="mb-6 text-2xl font-bold text-gray-900">Find Study Buddies</h2>
 
@@ -57,11 +63,65 @@ const FindBuddiesTab = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-700 mb-1">Start Time</label>
-                  <input type="time" value={fbAvailableTime.startTime || ""} onChange={(e) => setFbAvailableTime((p) => ({ ...p, startTime: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                  <button
+                    type="button"
+                    onClick={() => setOpenTimePicker({ type: 'start' })}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                  >
+                    {fbAvailableTime.startTime || "Select Start Time"}
+                  </button>
+                  {openTimePicker.type === 'start' && (
+                    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ type: null })}
+                          className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                        >
+                          ×
+                        </button>
+                        <StaticTimePickerLandscape
+                          value={fbAvailableTime.startTime || "09:00"}
+                          onChange={(newTime) => {
+                            setFbAvailableTime((p) => ({ ...p, startTime: newTime }));
+                            setOpenTimePicker({ type: null });
+                          }}
+                          label="Select Start Time"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs text-gray-700 mb-1">End Time</label>
-                  <input type="time" value={fbAvailableTime.endTime || ""} onChange={(e) => setFbAvailableTime((p) => ({ ...p, endTime: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                  <button
+                    type="button"
+                    onClick={() => setOpenTimePicker({ type: 'end' })}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                  >
+                    {fbAvailableTime.endTime || "Select End Time"}
+                  </button>
+                  {openTimePicker.type === 'end' && (
+                    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                      <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ type: null })}
+                          className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                        >
+                          ×
+                        </button>
+                        <StaticTimePickerLandscape
+                          value={fbAvailableTime.endTime || "17:00"}
+                          onChange={(newTime) => {
+                            setFbAvailableTime((p) => ({ ...p, endTime: newTime }));
+                            setOpenTimePicker({ type: null });
+                          }}
+                          label="Select End Time"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -106,6 +166,7 @@ const FindBuddiesTab = ({
       fbHasSearched && <div className="py-8 text-center text-gray-500">No students found. Try different search criteria.</div>
     )}
   </div>
-);
+  );
+};
 
 export default FindBuddiesTab;

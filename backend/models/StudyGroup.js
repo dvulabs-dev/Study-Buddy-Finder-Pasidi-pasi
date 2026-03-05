@@ -57,6 +57,37 @@ const studyGroupSchema = new mongoose.Schema(
             }
 
         }],
+        
+        // Hall Allocation fields
+        hallAllocation: {
+            building: {
+                type: String,
+                enum: {
+                    values: ["Main Building", "New Building"],
+                    message: "Please select a valid building"
+                },
+                required: [true, "Please select a building"],
+            },
+            floor: {
+                type: Number,
+                required: [true, "Please select a floor"],
+                min: [3, "Floor must be at least 3"],
+                max: [14, "Floor cannot exceed 14"],
+            },
+            lab: {
+                type: String,
+                required: [true, "Please select a lab"],
+                trim: true,
+            }
+        },
+        
+        // Study Group Image
+        image: {
+            type: String,
+            default: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
+            trim: true,
+        },
+        
           members: [
             {
                 type: mongoose.Schema.Types.ObjectId,
@@ -140,6 +171,36 @@ studyGroupSchema.pre("save", async function () {
             //Ensure meeting duration is at least 30 minutes
             if ((endTotalMin - startTotalMin) < 30) {
                 throw new Error("Meeting time must be at least 30 minutes long");
+            }
+        }
+        
+        // Validate hall allocation
+        if (!this.hallAllocation || !this.hallAllocation.building || !this.hallAllocation.floor || !this.hallAllocation.lab) {
+            throw new Error("Hall allocation is required (building, floor, and lab)");
+        }
+        
+        // Validate floor based on building
+        const building = this.hallAllocation.building;
+        const floor = this.hallAllocation.floor;
+        const lab = this.hallAllocation.lab;
+        
+        if (building === "Main Building") {
+            if (![3, 4, 5, 6].includes(floor)) {
+                throw new Error("Main Building only has floors 3, 4, 5, and 6");
+            }
+            // Validate lab format (A301-A306, A401-A406, etc.)
+            const expectedPrefix = `A${floor}`;
+            if (!lab.startsWith(expectedPrefix)) {
+                throw new Error(`Lab must start with ${expectedPrefix} for Main Building floor ${floor}`);
+            }
+        } else if (building === "New Building") {
+            if (floor < 3 || floor > 14) {
+                throw new Error("New Building has floors 3 to 14");
+            }
+            // Validate lab format (F301-F306, F401-F406, etc.)
+            const expectedPrefix = `F${floor}`;
+            if (!lab.startsWith(expectedPrefix)) {
+                throw new Error(`Lab must start with ${expectedPrefix} for New Building floor ${floor}`);
             }
         }
         

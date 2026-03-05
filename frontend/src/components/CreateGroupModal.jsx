@@ -1,21 +1,11 @@
 import { useState } from "react";
-import TimePicker from "react-time-picker";
-import "react-time-picker/dist/TimePicker.css";
-import "react-clock/dist/Clock.css";
 import { createStudyGroup } from "../services/studyGroupService";
+import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 import {
-  XMarkIcon,
-  PhotoIcon,
-  ClockIcon,
   UserGroupIcon,
+  XMarkIcon,
   AcademicCapIcon,
-  PlusIcon,
-  TrashIcon,
-  ChevronDownIcon,
   InformationCircleIcon,
-  CalendarIcon,
-  SunIcon,
-  MoonIcon,
 } from "@heroicons/react/24/outline";
 
 const INITIAL_FORM_DATA = {
@@ -23,13 +13,13 @@ const INITIAL_FORM_DATA = {
   description: "",
   subject: "",
   maxMembers: 10,
-  meetingTimes: [
-    {
-      startTime: "10:00",
-      endTime: "12:00",
-      day: "Monday",
-    },
-  ],
+  meetingTimes: [], // Start empty - user must add meeting times
+  hallAllocation: {
+    building: "",
+    floor: "",
+    lab: "",
+  },
+  image: "",
 };
 
 const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
@@ -37,16 +27,81 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   const [meetingTimeSlots, setMeetingTimeSlots] = useState(
     INITIAL_FORM_DATA.meetingTimes
   );
-  const [imageData, setImageData] = useState({ file: null, preview: null });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
-  const [activeTimeSlot, setActiveTimeSlot] = useState(null); // For highlighting active time picker
+  const [hallAllocation, setHallAllocation] = useState(INITIAL_FORM_DATA.hallAllocation);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [currentStep, setCurrentStep] = useState(1); // Step tracker
+  const [openTimePicker, setOpenTimePicker] = useState({ index: null, type: null }); // Track which time picker is open
 
   // Don't render if modal is closed
   if (!isOpen) {
     return null;
   }
+
+  // Generate floor options based on building
+  const getFloorOptions = () => {
+    if (hallAllocation.building === "Main Building") {
+      return [3, 4, 5, 6];
+    } else if (hallAllocation.building === "New Building") {
+      return Array.from({ length: 12 }, (_, i) => i + 3); // Floors 3 to 14
+    }
+    return [];
+  };
+
+  // Generate lab options based on building and floor
+  const getLabOptions = () => {
+    if (!hallAllocation.building || !hallAllocation.floor) return [];
+    
+    const floor = hallAllocation.floor;
+    const prefix = hallAllocation.building === "Main Building" ? "A" : "F";
+    
+    return Array.from({ length: 6 }, (_, i) => `${prefix}${floor}0${i + 1}`);
+  };
+
+  // Handle building change
+  const handleBuildingChange = (value) => {
+    setHallAllocation({
+      building: value,
+      floor: "",
+      lab: "",
+    });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.hallAllocation;
+      return next;
+    });
+  };
+
+  // Handle floor change
+  const handleFloorChange = (value) => {
+    setHallAllocation((prev) => ({
+      ...prev,
+      floor: value,
+      lab: "",
+    }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.hallAllocation;
+      return next;
+    });
+  };
+
+  // Handle lab change
+  const handleLabChange = (value) => {
+    setHallAllocation((prev) => ({
+      ...prev,
+      lab: value,
+    }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.hallAllocation;
+      return next;
+    });
+  };
 
   const validate = (data) => {
     const nextErrors = {};
@@ -91,6 +146,15 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
       }
     }
 
+    // Validate hall allocation
+    if (!hallAllocation.building) {
+      nextErrors.hallAllocation = "Please select a building";
+    } else if (!hallAllocation.floor) {
+      nextErrors.hallAllocation = "Please select a floor";
+    } else if (!hallAllocation.lab) {
+      nextErrors.hallAllocation = "Please select a lab";
+    }
+
     return nextErrors;
   };
 
@@ -108,36 +172,6 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
       delete next[name];
       return next;
     });
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({ ...prev, image: 'Please select an image file' }));
-        return;
-      }
-      
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, image: 'Image size must be less than 5MB' }));
-        return;
-      }
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImageData({ file, preview: e.target.result });
-        setErrors(prev => ({ ...prev, image: null }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImageData({ file: null, preview: null });
-    setErrors(prev => ({ ...prev, image: null }));
   };
 
   const handleTimeSlotChange = (index, field, value) => {
@@ -158,8 +192,8 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
     setMeetingTimeSlots([
       ...meetingTimeSlots,
       {
-        startTime: "10:00",
-        endTime: "12:00",
+        startTime: "09:00",
+        endTime: "11:00",
         day: "Monday",
       },
     ]);
@@ -173,33 +207,157 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
+  // Step validation functions
+  const validateStep1 = () => {
+    const nextErrors = {};
+    if (!formData.name.trim()) {
+      nextErrors.name = "Please provide a group name";
+    }
+    if (!formData.subject.trim()) {
+      nextErrors.subject = "Please provide a subject";
+    }
+    const max = Number(formData.maxMembers);
+    if (!Number.isFinite(max) || max < 2 || max > 50) {
+      nextErrors.maxMembers = "Maximum members must be between 2 and 50";
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const nextErrors = {};
+    if (!hallAllocation.building) {
+      nextErrors.hallAllocation = "Please select a building";
+    } else if (!hallAllocation.floor) {
+      nextErrors.hallAllocation = "Please select a floor";
+    } else if (!hallAllocation.lab) {
+      nextErrors.hallAllocation = "Please select a lab";
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateStep3 = () => {
+    const nextErrors = {};
+    if (!meetingTimeSlots || meetingTimeSlots.length === 0) {
+      nextErrors.meetingTimes = "Please add at least one meeting time";
+    } else {
+      for (const slot of meetingTimeSlots) {
+        if (!slot.startTime || !slot.endTime || !slot.day) {
+          nextErrors.meetingTimes = "Each meeting time must have day, start time, and end time";
+          break;
+        }
+        const [startHour, startMin] = slot.startTime.split(":").map(Number);
+        const [endHour, endMin] = slot.endTime.split(":").map(Number);
+        const startTotalMin = startHour * 60 + startMin;
+        const endTotalMin = endHour * 60 + endMin;
+        if (startTotalMin >= endTotalMin) {
+          nextErrors.meetingTimes = "Start time must be before end time";
+          break;
+        }
+        if (endTotalMin - startTotalMin < 30) {
+          nextErrors.meetingTimes = "Meeting must be at least 30 minutes long";
+          break;
+        }
+      }
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  // Navigation functions
+  const handleNext = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    let isValid = false;
+    setFormError("");
+    
+    if (currentStep === 1) {
+      isValid = validateStep1();
+    } else if (currentStep === 2) {
+      isValid = validateStep2();
+    }
+    
+    if (isValid) {
+      setCurrentStep(prev => prev + 1);
+      setErrors({});
+    } else {
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(currentStep - 1);
+    setErrors({});
+    setFormError("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
 
-    const nextErrors = validate(formData);
-    setErrors(nextErrors);
-    setFormError("");
-    if (Object.keys(nextErrors).length > 0) return;
+    // Only allow submission on Step 3
+    if (currentStep !== 3) {
+      // If user pressed Enter, treat it as Next button
+      handleNext();
+      return;
+    }
+
+    // Prevent submission if no meeting times added
+    if (!meetingTimeSlots || meetingTimeSlots.length === 0) {
+      setFormError("Please add at least one meeting time before creating the group.");
+      return;
+    }
+
+    // Validate step 3 before submitting
+    if (!validateStep3()) {
+      return;
+    }
 
     setLoading(true);
     try {
-      // Create FormData for file upload
-      const formDataWithFile = new FormData();
-      formDataWithFile.append('name', formData.name);
-      formDataWithFile.append('description', formData.description);
-      formDataWithFile.append('subject', formData.subject);
-      formDataWithFile.append('maxMembers', formData.maxMembers.toString());
-      formDataWithFile.append('meetingTimes', JSON.stringify(meetingTimeSlots));
-      
-      if (imageData.file) {
-        formDataWithFile.append('image', imageData.file);
+      let payload;
+      if (imageFile) {
+        // Send as FormData so multer stores the file on disk
+        const fd = new FormData();
+        fd.append('name', formData.name.trim());
+        fd.append('description', formData.description || '');
+        fd.append('subject', formData.subject.trim());
+        fd.append('maxMembers', String(formData.maxMembers));
+        fd.append('meetingTimes', JSON.stringify(meetingTimeSlots));
+        fd.append('hallAllocation', JSON.stringify({
+          building: hallAllocation.building,
+          floor: Number(hallAllocation.floor),
+          lab: hallAllocation.lab,
+        }));
+        fd.append('image', imageFile);
+        payload = fd;
+      } else {
+        payload = {
+          ...formData,
+          meetingTimes: meetingTimeSlots,
+          hallAllocation: {
+            building: hallAllocation.building,
+            floor: Number(hallAllocation.floor),
+            lab: hallAllocation.lab,
+          },
+          image: imageUrl || undefined,
+        };
       }
 
-      await createStudyGroup(formDataWithFile);
+      await createStudyGroup(payload);
       
       setFormData(INITIAL_FORM_DATA);
       setMeetingTimeSlots(INITIAL_FORM_DATA.meetingTimes);
-      setImageData({ file: null, preview: null });
+      setHallAllocation(INITIAL_FORM_DATA.hallAllocation);
+      setImageUrl("");
+      setImageFile(null);
+      setImagePreview(null);
+      setCurrentStep(1);
       onSuccess();
       onClose();
     } catch (error) {
@@ -226,10 +384,41 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   const handleClose = () => {
     setFormData(INITIAL_FORM_DATA);
     setMeetingTimeSlots(INITIAL_FORM_DATA.meetingTimes);
-    setImageData({ file: null, preview: null });
+    setHallAllocation(INITIAL_FORM_DATA.hallAllocation);
+    setImageUrl("");
+    setImagePreview(null);
     setErrors({});
     setFormError("");
+    setCurrentStep(1); // Reset to step 1
     onClose();
+  };
+
+  // Handle image file upload
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setFormError('Please upload a valid image file');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setFormError('Image size must be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      setImageUrl(''); // clear any typed URL
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image URL input
+  const handleImageUrlChange = (e) => {
+    const url = e.target.value;
+    setImageFile(null); // clear any selected file
+    setImageUrl(url);
+    setImagePreview(url || null);
   };
 
   const inputBase =
@@ -302,92 +491,69 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1">
-          {/* Two-column layout for better space utilization */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT COLUMN - Basic Info */}
-            <div className="space-y-6">
-              {/* Group Image */}
-              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  <span className="flex items-center gap-2">
-                    <PhotoIcon className="w-4 h-4 text-gray-500" />
-                    Group Image <span className="text-gray-400 text-xs">(Optional)</span>
-                  </span>
-                </label>
-                
-                {imageData.preview ? (
-                  <div className="space-y-3">
-                    <div className="relative group">
-                      <img
-                        src={imageData.preview}
-                        alt="Group preview"
-                        className="w-full h-40 object-cover rounded-lg border border-gray-300 shadow-sm"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <button
-                          type="button"
-                          onClick={handleRemoveImage}
-                          disabled={loading}
-                          className="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transform hover:scale-110 transition-all duration-200 disabled:opacity-50"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('create-group-image-upload').click()}
-                      disabled={loading}
-                      className="w-full text-sm bg-indigo-100 text-indigo-700 py-2 rounded-lg hover:bg-indigo-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                    >
-                      Change Image
-                    </button>
+          <form onSubmit={(e) => { e.preventDefault(); e.stopPropagation(); }} className="p-6 overflow-y-auto flex-1">
+            {/* Step Indicator */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
+                {/* Step 1 */}
+                <div className="flex items-center flex-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                    currentStep >= 1 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    1
                   </div>
-                ) : (
-                  <div
-                    onClick={() => !loading && document.getElementById('create-group-image-upload').click()}
-                    className="relative cursor-pointer group"
-                  >
-                    <div className="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition-all duration-200 group-hover:border-indigo-400 group-hover:bg-indigo-50">
-                      <div className="flex flex-col items-center justify-center p-4">
-                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-2 group-hover:bg-indigo-200 transition-all duration-200">
-                          <PhotoIcon className="w-6 h-6 text-indigo-600" />
-                        </div>
-                        <p className="text-xs text-gray-600 text-center">
-                          <span className="font-semibold text-indigo-600">Click to upload</span>
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
-                      </div>
-                    </div>
+                  <div className="ml-2">
+                    <div className="text-xs font-semibold text-gray-700">Step 1</div>
+                    <div className="text-xs text-gray-500">Basic Info</div>
                   </div>
-                )}
-                
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  disabled={loading}
-                  className="hidden"
-                  id="create-group-image-upload"
-                />
-                
-                {errors?.image && (
-                  <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
-                    <XMarkIcon className="w-3 h-3" />
-                    {errors.image}
-                  </p>
-                )}
-              </div>
+                </div>
 
-              {/* Group Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <span className="flex items-center gap-2">
-                    <UserGroupIcon className="w-4 h-4 text-gray-500" />
+                {/* Connector */}
+                <div className={`flex-1 h-1 mx-2 ${
+                  currentStep > 1 ? 'bg-indigo-600' : 'bg-gray-200'
+                }`}></div>
+
+                {/* Step 2 */}
+                <div className="flex items-center flex-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                    currentStep >= 2 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    2
+                  </div>
+                  <div className="ml-2">
+                    <div className="text-xs font-semibold text-gray-700">Step 2</div>
+                    <div className="text-xs text-gray-500">Hall & Image</div>
+                  </div>
+                </div>
+
+                {/* Connector */}
+                <div className={`flex-1 h-1 mx-2 ${
+                  currentStep > 2 ? 'bg-indigo-600' : 'bg-gray-200'
+                }`}></div>
+
+                {/* Step 3 */}
+                <div className="flex items-center flex-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                    currentStep >= 3 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    3
+                  </div>
+                  <div className="ml-2">
+                    <div className="text-xs font-semibold text-gray-700">Step 3</div>
+                    <div className="text-xs text-gray-500">Meeting Times</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 1: Basic Info */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                {/* Group Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Group Name <span className="text-red-500">*</span>
-                  </span>
-                </label>
+                  </label>
                 <input
                   type="text"
                   name="name"
@@ -438,12 +604,11 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                 )}
               </div>
 
-              {/* Max Members */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Maximum Members
-                </label>
-                <div className="relative">
+                {/* Max Members */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Maximum Members
+                  </label>
                   <input
                     type="number"
                     name="maxMembers"
@@ -462,224 +627,316 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                       errors?.maxMembers ? "border-red-300 focus:ring-red-500" : "border-gray-300"
                     }`}
                   />
-                  <UserGroupIcon className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                </div>
-                {errors?.maxMembers ? (
-                  <p id="max-members-error" className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                    <XMarkIcon className="w-3 h-3" />
-                    {errors.maxMembers}
-                  </p>
-                ) : (
-                  <p id="max-members-hint" className="text-xs text-gray-400 mt-1">
-                    Between 2 and 50 members
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN - Description & Meeting Times */}
-            <div className="space-y-6">
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description <span className="text-gray-400 text-xs">(Optional)</span>
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  disabled={loading}
-                  placeholder="Brief description of your study group's focus, goals, and expectations..."
-                  rows="5"
-                  className={`${inputBase} resize-none border-gray-300`}
-                />
-                <p className="text-xs text-gray-400 mt-1 text-right">
-                  {formData.description.length}/500
-                </p>
-              </div>
-
-              {/* Meeting Times Section */}
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100">
-                <div className="flex items-start gap-3">
-                  <CalendarIcon className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-medium text-indigo-900">Meeting Schedule</h4>
-                    <p className="text-xs text-indigo-700 mt-1">
-                      Set up regular meeting times for your study group
+                  {errors?.maxMembers ? (
+                    <p id="max-members-error" className="text-xs text-red-700 mt-1">
+                      {errors.maxMembers}
                     </p>
-                  </div>
+                  ) : (
+                    <p id="max-members-hint" className="text-xs text-gray-500 mt-1">
+                      Between 2 and 50 members
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    disabled={loading}
+                    placeholder="Brief description of your study group..."
+                    rows="4"
+                    className={`${inputBase} resize-none border-gray-300`}
+                  />
                 </div>
               </div>
+            )}
 
-              {/* Meeting Time Slots - Enhanced Clock Design */}
-              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                {meetingTimeSlots.map((slot, index) => (
-                  <div
-                    key={index}
-                    className={`bg-white p-4 rounded-xl border-2 transition-all duration-200 shadow-sm ${
-                      activeTimeSlot === index 
-                        ? "border-indigo-400 shadow-lg shadow-indigo-100" 
-                        : "border-gray-200 hover:border-indigo-200"
-                    }`}
-                    onClick={() => setActiveTimeSlot(index)}
-                  >
-                    {/* Time Slot Header */}
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 ${
-                          activeTimeSlot === index
-                            ? "bg-indigo-100 text-indigo-700"
-                            : "bg-gray-100 text-gray-600"
-                        }`}>
-                          <ClockIcon className="w-3 h-3" />
-                          Slot #{index + 1}
-                        </span>
-                        {/* Quick time preview */}
-                        {slot.startTime && slot.endTime && (
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            {getTimeOfDayIcon(slot.startTime)}
-                            {formatTimeForDisplay(slot.startTime)} - {formatTimeForDisplay(slot.endTime)}
-                          </span>
-                        )}
-                      </div>
-                      {meetingTimeSlots.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTimeSlot(index)}
-                          disabled={loading}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-all duration-200 disabled:opacity-50"
-                          title="Remove time slot"
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </button>
-                      )}
+            {/* Step 2: Hall Allocation & Image */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                {/* Hall Allocation Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hall Allocation <span className="text-red-500">*</span>
+                  </label>
+                  
+                  {/* Building Selection */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Building
+                      </label>
+                      <select
+                        value={hallAllocation.building}
+                        onChange={(e) => handleBuildingChange(e.target.value)}
+                        disabled={loading}
+                        className={`${inputBase} ${
+                          errors?.hallAllocation ? "border-red-300" : "border-gray-300"
+                        }`}
+                      >
+                        <option value="">Select Building</option>
+                        <option value="Main Building">Main Building</option>
+                        <option value="New Building">New Building</option>
+                      </select>
                     </div>
 
-                    {/* Day Selection with visual improvement */}
+                    {/* Floor Selection */}
+                    {hallAllocation.building && (
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          Floor
+                        </label>
+                        <select
+                          value={hallAllocation.floor}
+                          onChange={(e) => handleFloorChange(e.target.value)}
+                          disabled={loading}
+                          className={`${inputBase} ${
+                            errors?.hallAllocation ? "border-red-300" : "border-gray-300"
+                          }`}
+                        >
+                          <option value="">Select Floor</option>
+                          {getFloorOptions().map((floor) => (
+                            <option key={floor} value={floor}>
+                              Floor {floor}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Lab Selection */}
+                    {hallAllocation.building && hallAllocation.floor && (
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">
+                          Lab
+                        </label>
+                        <select
+                          value={hallAllocation.lab}
+                          onChange={(e) => handleLabChange(e.target.value)}
+                          disabled={loading}
+                          className={`${inputBase} ${
+                            errors?.hallAllocation ? "border-red-300" : "border-gray-300"
+                          }`}
+                        >
+                          <option value="">Select Lab</option>
+                          {getLabOptions().map((lab) => (
+                            <option key={lab} value={lab}>
+                              {lab}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {errors?.hallAllocation && (
+                      <p className="text-xs text-red-700 mt-1">
+                        {errors.hallAllocation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Group Image */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Group Image (Optional)
+                  </label>
+                  
+                  {/* Image Preview */}
+                  {imagePreview && (
                     <div className="mb-3">
-                      <label className="block text-xs font-medium text-gray-500 mb-2">
-                        Day of Week
-                      </label>
-                      <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Group preview"
+                        className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* File Upload */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    disabled={loading}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  />
+                  
+                  {/* Or URL Input */}
+                  <div className="mt-2">
+                    <label className="block text-xs text-gray-600 mb-1">Or enter image URL</label>
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={handleImageUrlChange}
+                      disabled={loading}
+                      placeholder="https://example.com/image.jpg"
+                      className={`${inputBase} border-gray-300 text-sm`}
+                    />
+                  </div>
+                  
+                  <p className="mt-1 text-xs text-gray-500">
+                    Upload an image or provide a URL. Default image will be used if not provided.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Meeting Times */}
+            {currentStep === 3 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Meeting Times <span className="text-red-500">*</span>
+                </label>
+
+                {meetingTimeSlots.length === 0 && (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">
+                      Click "Add Time Slot" below to add your group's meeting schedule.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {meetingTimeSlots.map((slot, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                    >
+                      {/* Day Selection */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Day
+                        </label>
                         <select
                           value={slot.day}
                           onChange={(e) =>
                             handleTimeSlotChange(index, "day", e.target.value)
                           }
                           disabled={loading}
-                          className={`${inputBase} appearance-none border-gray-300 pr-10 ${
-                            activeTimeSlot === index ? "border-indigo-300 bg-indigo-50/30" : ""
-                          }`}
+                          className={`${inputBase} border-gray-300`}
                         >
-                          {days.map(day => (
-                            <option key={day} value={day}>{day}</option>
-                          ))}
+                          <option value="Monday">Monday</option>
+                          <option value="Tuesday">Tuesday</option>
+                          <option value="Wednesday">Wednesday</option>
+                          <option value="Thursday">Thursday</option>
+                          <option value="Friday">Friday</option>
+                          <option value="Saturday">Saturday</option>
+                          <option value="Sunday">Sunday</option>
                         </select>
-                        <ChevronDownIcon className="absolute right-3 top-3 w-4 h-4 text-gray-400 pointer-events-none" />
                       </div>
-                    </div>
 
-                    {/* Enhanced Time Pickers with visual feedback */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="time-picker-container">
-                        <label className="block text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
-                          <SunIcon className="w-3 h-3 text-yellow-500" />
+                      {/* Start Time with Material-UI Clock */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           Start Time
                         </label>
-                        <div className={`time-picker-wrapper ${activeTimeSlot === index ? "active" : ""}`}>
-                          <TimePicker
-                            value={slot.startTime}
-                            onChange={(value) =>
-                              handleTimeSlotChange(index, "startTime", value)
-                            }
-                            format="hh:mm a"
-                            className="w-full custom-time-picker"
-                            clockClassName="custom-clock"
-                            disableClock={false}
-                            clearIcon={null}
-                          />
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ index, type: 'start' })}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed text-left bg-white"
+                        >
+                          {slot.startTime || "Select Start Time"}
+                        </button>
+                        {openTimePicker.index === index && openTimePicker.type === 'start' && (
+                          <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                              <button
+                                type="button"
+                                onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                              >
+                                ×
+                              </button>
+                              <StaticTimePickerLandscape
+                                value={slot.startTime}
+                                onChange={(newTime) => {
+                                  handleTimeSlotChange(index, "startTime", newTime);
+                                  setOpenTimePicker({ index: null, type: null });
+                                }}
+                                disabled={loading}
+                                label="Select Start Time"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="time-picker-container">
-                        <label className="block text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
-                          <MoonIcon className="w-3 h-3 text-indigo-500" />
+                      {/* End Time with Material-UI Clock */}
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
                           End Time
                         </label>
-                        <div className={`time-picker-wrapper ${activeTimeSlot === index ? "active" : ""}`}>
-                          <TimePicker
-                            value={slot.endTime}
-                            onChange={(value) =>
-                              handleTimeSlotChange(index, "endTime", value)
-                            }
-                            format="hh:mm a"
-                            className="w-full custom-time-picker"
-                            clockClassName="custom-clock"
-                            disableClock={false}
-                            clearIcon={null}
-                          />
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setOpenTimePicker({ index, type: 'end' })}
+                          disabled={loading}
+                          className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed text-left bg-white"
+                        >
+                          {slot.endTime || "Select End Time"}
+                        </button>
+                        {openTimePicker.index === index && openTimePicker.type === 'end' && (
+                          <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
+                              <button
+                                type="button"
+                                onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                              >
+                                ×
+                              </button>
+                              <StaticTimePickerLandscape
+                                value={slot.endTime}
+                                onChange={(newTime) => {
+                                  handleTimeSlotChange(index, "endTime", newTime);
+                                  setOpenTimePicker({ index: null, type: null });
+                                }}
+                                disabled={loading}
+                                label="Select End Time"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Remove Button */}
+                      {meetingTimeSlots.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTimeSlot(index)}
+                          disabled={loading}
+                          className="w-full text-sm bg-red-100 text-red-700 py-2 rounded hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Remove Time Slot
+                        </button>
+                      )}
                     </div>
+                  ))}
+                </div>
 
-                    {/* Enhanced Duration indicator with progress bar */}
-                    {slot.startTime && slot.endTime && (
-                      <div className="mt-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-gray-500 flex items-center gap-1">
-                            <ClockIcon className="w-3 h-3" />
-                            Duration
-                          </span>
-                          <span className="font-medium text-indigo-600">
-                            {(() => {
-                              const [startHour, startMin] = slot.startTime.split(":").map(Number);
-                              const [endHour, endMin] = slot.endTime.split(":").map(Number);
-                              const duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
-                              const hours = Math.floor(duration / 60);
-                              const minutes = duration % 60;
-                              return `${hours > 0 ? hours + 'h ' : ''}${minutes > 0 ? minutes + 'm' : ''}`;
-                            })()}
-                          </span>
-                        </div>
-                        {/* Duration progress bar */}
-                        <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full"
-                            style={{ 
-                              width: `${Math.min(((() => {
-                                const [startHour, startMin] = slot.startTime.split(":").map(Number);
-                                const [endHour, endMin] = slot.endTime.split(":").map(Number);
-                                const duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
-                                return (duration / 180) * 100; // 3 hours max for progress bar
-                              })()), 100)}%` 
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {/* Add Time Slot Button */}
+                <button
+                  type="button"
+                  onClick={handleAddTimeSlot}
+                  disabled={loading}
+                  className="w-full mt-3 text-sm bg-indigo-100 text-indigo-700 py-2 rounded hover:bg-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  + Add Another Time Slot
+                </button>
+
+                {errors?.meetingTimes && (
+                  <p className="text-xs text-red-700 mt-2">
+                    {errors.meetingTimes}
+                  </p>
+                )}
               </div>
-
-              {/* Add Time Slot Button */}
-              <button
-                type="button"
-                onClick={handleAddTimeSlot}
-                disabled={loading}
-                className="w-full text-sm bg-indigo-50 text-indigo-700 py-3 rounded-xl hover:bg-indigo-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2 border-2 border-dashed border-indigo-200 hover:border-indigo-300"
-              >
-                <PlusIcon className="w-4 h-4" />
-                Add Another Time Slot
-              </button>
-
-              {errors?.meetingTimes && (
-                <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
-                  <XMarkIcon className="w-3 h-3" />
-                  {errors.meetingTimes}
-                </p>
-              )}
-            </div>
-          </div>
+            )}
 
           {/* Form Error */}
           {formError && (
@@ -689,134 +946,47 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
           )}
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-6 mt-6 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <PlusIcon className="w-4 h-4" />
-                  Create Group
-                </>
+            {/* Buttons */}
+            <div className="flex gap-3 pt-6 mt-6 border-t border-gray-200">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={loading}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Back
+                </button>
               )}
-            </button>
-          </div>
-        </form>
-      </div>
+              
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={loading}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
 
-      {/* Custom styles for enhanced TimePicker */}
-      <style jsx>{`
-        .custom-clock {
-          border-radius: 0.75rem !important;
-          border: none !important;
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-          padding: 0.75rem !important;
-          background: white !important;
-        }
-        
-        .react-time-picker {
-          width: 100% !important;
-        }
-        
-        .time-picker-wrapper {
-          transition: all 0.2s ease;
-        }
-        
-        .time-picker-wrapper.active .react-time-picker__wrapper {
-          border-color: #6366f1 !important;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
-          background-color: #f5f3ff !important;
-        }
-        
-        .react-time-picker__wrapper {
-          border: 1px solid #e5e7eb !important;
-          border-radius: 0.75rem !important;
-          padding: 0.5rem 0.75rem !important;
-          background-color: white !important;
-          transition: all 0.2s ease !important;
-          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-        }
-        
-        .react-time-picker__wrapper:hover {
-          border-color: #818cf8 !important;
-          box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.1) !important;
-        }
-        
-        .react-time-picker__wrapper:focus-within {
-          border-color: #6366f1 !important;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
-        }
-        
-        .react-time-picker__inputGroup {
-          font-size: 0.875rem !important;
-          color: #1f2937 !important;
-        }
-        
-        .react-time-picker__inputGroup__input {
-          color: #1f2937 !important;
-          font-weight: 500 !important;
-        }
-        
-        .react-time-picker__inputGroup__leadingZero {
-          color: #9ca3af !important;
-        }
-        
-        .react-time-picker__clock {
-          border-radius: 0.75rem !important;
-          border: none !important;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-        }
-        
-        .react-clock__face {
-          border: 1px solid #e5e7eb !important;
-        }
-        
-        .react-clock__hour-hand__body,
-        .react-clock__minute-hand__body,
-        .react-clock__second-hand__body {
-          background-color: #4f46e5 !important;
-        }
-        
-        .react-clock__mark__number {
-          color: #4b5563 !important;
-          font-size: 0.75rem !important;
-        }
-        
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #c7d2fe;
-          border-radius: 10px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #818cf8;
-        }
-      `}</style>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (currentStep === 3) {
+                    handleSubmit(e);
+                  } else {
+                    handleNext(e);
+                  }
+                }}
+                disabled={loading || (currentStep === 3 && meetingTimeSlots.length === 0)}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+              >
+                {loading ? "Creating..." : (currentStep === 3 ? "Create Group" : "Next")}
+              </button>
+            </div>
+          </form>
+      </div>
     </div>
   );
 };

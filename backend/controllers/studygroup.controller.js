@@ -3,28 +3,81 @@ const { model } = require("mongoose");
 const StudyGroup = require("../models/StudyGroup");
 const User = require("../models/User");
 
+// Helper function to check if two time slots overlap
+const doTimeSlotsOverlap = (slot1Start, slot1End, slot2Start, slot2End) => {
+    // Convert time strings to minutes for comparison
+    const timeToMinutes = (time) => {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
+    };
+    
+    const start1 = timeToMinutes(slot1Start);
+    const end1 = timeToMinutes(slot1End);
+    const start2 = timeToMinutes(slot2Start);
+    const end2 = timeToMinutes(slot2End);
+    
+    // Two time slots overlap if they share any time period
+    // Allow back-to-back bookings (one ends exactly when another starts)
+    // Overlap exists if: start1 < end2 AND start2 < end1
+    // This naturally allows adjacent times (e.g., 11:00-12:00 and 12:00-13:00)
+    return start1 < end2 && start2 < end1;
+};
+
+// Helper function to check for scheduling conflicts
+const checkSchedulingConflict = async (hallAllocation, meetingTimes, excludeGroupId = null) => {
+    // Find all groups with the same hall allocation
+    const query = {
+        'hallAllocation.building': hallAllocation.building,
+        'hallAllocation.floor': hallAllocation.floor,
+        'hallAllocation.lab': hallAllocation.lab,
+    };
+    
+    // If updating, exclude the current group from the check
+    if (excludeGroupId) {
+        query._id = { $ne: excludeGroupId };
+    }
+    
+    const conflictingGroups = await StudyGroup.find(query).select('name meetingTimes hallAllocation');
+    
+    // Check each meeting time for conflicts
+    for (const newSlot of meetingTimes) {
+        for (const existingGroup of conflictingGroups) {
+            for (const existingSlot of existingGroup.meetingTimes) {
+                // Check if same day and overlapping times
+                if (newSlot.day === existingSlot.day) {
+                    if (doTimeSlotsOverlap(newSlot.startTime, newSlot.endTime, existingSlot.startTime, existingSlot.endTime)) {
+                        return {
+                            conflict: true,
+                            message: `Scheduling conflict: Lab ${hallAllocation.lab} is already booked by "${existingGroup.name}" on ${newSlot.day} from ${existingSlot.startTime} to ${existingSlot.endTime}.`,
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    return { conflict: false };
+};
+
 // @desc    Create a new study group
 // @route   POST /api/studygroups
 // @access  Private
 
 exports.createStudyGroup = async (req, res) => {
  try {
-    const {name, description, subject, maxMembers, meetingTimes: meetingTimesRaw} = req.body;
-    
-    // Get image path if file was uploaded
-    const imagePath = req.file ? `/uploads/study-groups/${req.file.filename}` : '';
+    const {name, description, subject, maxMembers, meetingTimes: meetingTimesRaw, hallAllocation: hallAllocationRaw, image} = req.body;
 
-    // Parse meetingTimes if it's a JSON string (from FormData)
-    let meetingTimes;
-    try {
-        meetingTimes = typeof meetingTimesRaw === 'string' 
-            ? JSON.parse(meetingTimesRaw) 
-            : meetingTimesRaw;
-    } catch (parseError) {
-        return res.status(400).json({
-            message: "Invalid meetingTimes format",
-        });
+    // Parse JSON strings when data arrives via FormData (multipart)
+    let meetingTimes = meetingTimesRaw;
+    if (typeof meetingTimesRaw === 'string') {
+        try { meetingTimes = JSON.parse(meetingTimesRaw); } catch { return res.status(400).json({ message: 'Invalid meetingTimes format' }); }
     }
+    let hallAllocation = hallAllocationRaw;
+    if (typeof hallAllocationRaw === 'string') {
+        try { hallAllocation = JSON.parse(hallAllocationRaw); } catch { return res.status(400).json({ message: 'Invalid hallAllocation format' }); }
+    }
+    // If a file was uploaded via multer, use its path; otherwise fall back to body image field
+    const imageValue = req.file ? `/uploads/study-groups/${req.file.filename}` : (image || undefined);
 
     //Validation
     if (!name || !subject){
@@ -41,6 +94,13 @@ exports.createStudyGroup = async (req, res) => {
         });
     }
 
+    if (!hallAllocation || !hallAllocation.building || !hallAllocation.floor || !hallAllocation.lab) {
+        return res.status(400)
+        .json({
+            message: "Please provide hall allocation (building, floor, and lab)",
+        });
+    }
+
     //Check if group with same name already exists
     const existingGroup = await StudyGroup.findOne({
         name: { $regex: `^${name}$`, $options: "i" },
@@ -52,16 +112,33 @@ exports.createStudyGroup = async (req, res) => {
         });
     }
 
+    // Check for scheduling conflicts
+    const conflictCheck = await checkSchedulingConflict(hallAllocation, meetingTimes);
+    if (conflictCheck.conflict) {
+        return res.status(400)
+        .json({
+            message: conflictCheck.message,
+        });
+    }
+
     //Create group
-    const studyGroup = await StudyGroup.create({
+    const groupData = {
         name,
         description,
         subject,
         creator: req.user.id,
         meetingTimes,
         maxMembers: maxMembers || 10,
-        image: imagePath,
-    });
+        hallAllocation,
+    };
+    
+    // Add image if provided (uploaded file takes priority over URL)
+    if (imageValue) {
+        groupData.image = imageValue;
+    }
+    
+    const studyGroup = await StudyGroup.create(groupData);
+    
     //Add group to user's studyGroups
     await User.findByIdAndUpdate(req.user.id, {
         $push: { studyGroups: studyGroup._id },
@@ -134,25 +211,13 @@ exports.updateStudyGroup = async (req, res) => {
         }
 
         //update fields if provided
-        const {name, description, subject, meetingTimes: meetingTimesRaw, maxMembers} = req.body;
-
-        // Parse meetingTimes if it's a JSON string (from FormData)
-        let meetingTimes;
-        if (meetingTimesRaw !== undefined) {
-            try {
-                meetingTimes = typeof meetingTimesRaw === 'string' 
-                    ? JSON.parse(meetingTimesRaw) 
-                    : meetingTimesRaw;
-            } catch (parseError) {
-                return res.status(400).json({
-                    message: "Invalid meetingTimes format",
-                });
-            }
-        }
+        const {name, description, subject, meetingTimes, maxMembers, hallAllocation, image} = req.body;
 
         if (name!== undefined) studyGroup.name = name;
         if (description !== undefined) studyGroup.description = description;
         if (subject !== undefined) studyGroup.subject = subject;
+        if (image !== undefined) studyGroup.image = image;
+        
         if (meetingTimes !== undefined) {
             if (meetingTimes.length === 0) {
                 return res.status(400).json({
@@ -160,6 +225,29 @@ exports.updateStudyGroup = async (req, res) => {
                 });
             }
             studyGroup.meetingTimes = meetingTimes;
+        }
+        
+        // Update hall allocation if provided
+        if (hallAllocation !== undefined) {
+            if (!hallAllocation.building || !hallAllocation.floor || !hallAllocation.lab) {
+                return res.status(400).json({
+                    message: "Hall allocation must include building, floor, and lab",
+                });
+            }
+            studyGroup.hallAllocation = hallAllocation;
+        }
+        
+        // Check for scheduling conflicts (only if meetingTimes or hallAllocation changed)
+        if (hallAllocation !== undefined || meetingTimes !== undefined) {
+            const timesToCheck = meetingTimes !== undefined ? meetingTimes : studyGroup.meetingTimes;
+            const hallToCheck = hallAllocation !== undefined ? hallAllocation : studyGroup.hallAllocation;
+            
+            const conflictCheck = await checkSchedulingConflict(hallToCheck, timesToCheck, studyGroup._id);
+            if (conflictCheck.conflict) {
+                return res.status(400).json({
+                    message: conflictCheck.message,
+                });
+            }
         }
 
 
@@ -571,13 +659,42 @@ exports.updateStudyGroup = async (req, res) => {
             }
         }
 
+        // Parse hallAllocation if it's a JSON string (from FormData)
+        const hallAllocationRaw = req.body.hallAllocation;
+        let hallAllocation;
+        if (hallAllocationRaw) {
+            try {
+                hallAllocation = typeof hallAllocationRaw === 'string'
+                    ? JSON.parse(hallAllocationRaw)
+                    : hallAllocationRaw;
+            } catch (parseError) {
+                return res.status(400).json({ message: "Invalid hallAllocation format" });
+            }
+            if (!hallAllocation.building || !hallAllocation.floor || !hallAllocation.lab) {
+                return res.status(400).json({
+                    message: "Hall allocation must include building, floor, and lab",
+                });
+            }
+        }
+
         // Update fields
         if (name) studyGroup.name = name;
         if (description !== undefined) studyGroup.description = description;
         if (subject) studyGroup.subject = subject;
-        if (maxMembers) studyGroup.maxMembers = maxMembers;
-        if (meetingTimes) studyGroup.meetingTimes = meetingTimes;
-        
+        if (maxMembers) studyGroup.maxMembers = Number(maxMembers);
+        if (meetingTimes && meetingTimes.length > 0) studyGroup.meetingTimes = meetingTimes;
+        if (hallAllocation) studyGroup.hallAllocation = hallAllocation;
+
+        // Check for scheduling conflicts if times or hall changed
+        if (hallAllocation || meetingTimes) {
+            const timesToCheck = meetingTimes || studyGroup.meetingTimes;
+            const hallToCheck = hallAllocation || studyGroup.hallAllocation;
+            const conflictCheck = await checkSchedulingConflict(hallToCheck, timesToCheck, studyGroup._id);
+            if (conflictCheck.conflict) {
+                return res.status(400).json({ message: conflictCheck.message });
+            }
+        }
+
         // Handle image upload if provided
         if (req.file) {
             // Delete old image file if exists
