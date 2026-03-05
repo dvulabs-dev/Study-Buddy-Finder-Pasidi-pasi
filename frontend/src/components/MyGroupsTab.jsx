@@ -10,12 +10,7 @@ const MyGroupsTab = ({
   mgOpenEdit,
   mgDelete,
   mgLeave,
-  mgUpdate,
   openInviteModal,
-  showEditModal,
-  setShowEditModal,
-  editFormData,
-  setEditFormData,
   showDetailsModal,
   setShowDetailsModal,
   selectedGroup,
@@ -42,106 +37,176 @@ const MyGroupsTab = ({
 
   const GroupCard = ({ group, isCreator }) => {
     const memberCount = group.members?.length || 0;
+    const backendUrl = 'http://localhost:5000';
+
+    // Generate star rating based on member fill percentage
+    const fillPercentage = group.maxMembers > 0 ? (memberCount / group.maxMembers) * 5 : 0;
+    const fullStars = Math.floor(fillPercentage);
+    const hasHalfStar = fillPercentage % 1 >= 0.5;
 
     return (
-      <div className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm transition hover:shadow-md hover:border-indigo-200">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <h4 className="text-lg font-bold text-gray-900 leading-snug break-words">{group.name}</h4>
-            {group.description ? (
-              <p className="mt-1 text-sm text-gray-600">{group.description}</p>
-            ) : (
-              <p className="mt-1 text-sm text-gray-400">No description provided.</p>
-            )}
-
-            <div className="flex flex-wrap items-center gap-2 mt-3 text-sm text-gray-600">
-              <span className="px-2.5 py-1 text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full font-medium">
-                {group.subject}
-              </span>
-              <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-full">
-                {memberCount}/{group.maxMembers} members
-              </span>
-              {!isCreator && group.creator?.name && (
-                <span className="text-xs text-gray-500">Created by {group.creator.name}</span>
-              )}
-
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        {/* Yellow Top Bar */}
+        <div className="h-2 bg-amber-400" />
+        
+        {/* Image Section */}
+        <div className="relative">
+          {group.image ? (
+            <img
+              src={`${backendUrl}${group.image}`}
+              alt={group.name}
+              className="w-full h-44 object-cover"
+              onError={(e) => {
+                e.target.src = 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop';
+              }}
+            />
+          ) : (
+            <div className="w-full h-44 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+              <UserGroupIcon className="w-16 h-16 text-indigo-300" />
             </div>
+          )}
+          
+          {/* Play Button Overlay */}
+          <button
+            type="button"
+            onClick={() => mgViewDetails(group._id)}
+            className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300"
+          >
+            <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+              <svg className="w-6 h-6 text-indigo-600 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </button>
 
-          </div>
-
+          {/* Status Badge */}
           {!isCreator && (
-            <span className="shrink-0 px-3 py-1.5 text-sm font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full">
+            <span className="absolute top-3 right-3 px-3 py-1.5 text-xs font-bold text-white bg-green-500 rounded-full shadow-md">
               Joined
+            </span>
+          )}
+          {isCreator && (
+            <span className="absolute top-3 right-3 px-3 py-1.5 text-xs font-bold text-white bg-amber-500 rounded-full shadow-md">
+              Creator
             </span>
           )}
         </div>
 
-        {group.meetingTimes && group.meetingTimes.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="text-xs font-semibold text-gray-700 mb-2">Meeting Schedule</div>
-            <div className="space-y-1">
-              {group.meetingTimes.map((slot, idx) => (
-                <div key={idx} className="text-xs text-gray-600">
-                  <span className="inline-block px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-full">
-                    {slot.day} {formatTime(slot.startTime)}-{formatTime(slot.endTime)}
-                  </span>
-                </div>
+        {/* Card Content */}
+        <div className="p-5">
+          {/* Subject Tag */}
+          <span className="inline-block px-3 py-1 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full mb-3">
+            {group.subject}
+          </span>
+
+          {/* Group Name */}
+          <h4 className="text-lg font-bold text-gray-900 leading-tight mb-2 line-clamp-2">
+            {group.name}
+          </h4>
+
+          {/* Description */}
+          {group.description ? (
+            <p className="text-sm text-gray-500 mb-3 line-clamp-2">{group.description}</p>
+          ) : (
+            <p className="text-sm text-gray-400 italic mb-3">No description provided</p>
+          )}
+
+          {/* Meeting Times */}
+          {group.meetingTimes && group.meetingTimes.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3">
+              {group.meetingTimes.slice(0, 2).map((slot, idx) => (
+                <span key={idx} className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                  {slot.day} {formatTime(slot.startTime)}
+                </span>
+              ))}
+              {group.meetingTimes.length > 2 && (
+                <span className="text-xs text-gray-500 px-2 py-1">+{group.meetingTimes.length - 2} more</span>
+              )}
+            </div>
+          )}
+
+          {/* Members & Rating Row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-1">
+              <UserGroupIcon className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-600">{memberCount}/{group.maxMembers}</span>
+            </div>
+            <div className="flex items-center gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <svg
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < fullStars
+                      ? 'text-amber-400'
+                      : i === fullStars && hasHalfStar
+                      ? 'text-amber-400'
+                      : 'text-gray-200'
+                  }`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
               ))}
             </div>
           </div>
-        )}
 
-        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-          <div className="text-xs text-gray-500">
-            {!group.meetingTimes || group.meetingTimes.length === 0 ? "No availability set" : ""}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => mgViewDetails(group._id)}
-              disabled={mgActionLoading === group._id}
-              className="px-3.5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {mgActionLoading === group._id ? "Loading..." : "View"}
-            </button>
+          {/* Creator Info */}
+          {!isCreator && group.creator?.name && (
+            <p className="text-xs text-gray-500 mb-4">Created by <span className="font-medium text-gray-700">{group.creator.name}</span></p>
+          )}
 
-            {isCreator ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => openInviteModal(group._id)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-white bg-teal-600 rounded-xl hover:bg-teal-700"
-                >
-                  <EnvelopeIcon className="w-4 h-4" />
-                  Invite
-                </button>
-                <button
-                  type="button"
-                  onClick={() => mgOpenEdit(group)}
-                  disabled={mgActionLoading === group._id}
-                  className="px-3.5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => mgDelete(group._id, group.name)}
-                  disabled={mgActionLoading === group._id}
-                  className="px-3.5 py-2 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {mgActionLoading === group._id ? "..." : "Delete"}
-                </button>
-              </>
-            ) : (
+          {/* Divider */}
+          <div className="border-t border-gray-100 pt-4">
+            {/* Action Buttons Row */}
+            <div className="flex items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() => mgLeave(group._id, group.name)}
+                onClick={() => mgViewDetails(group._id)}
                 disabled={mgActionLoading === group._id}
-                className="px-3.5 py-2 text-sm font-semibold text-white bg-orange-600 rounded-xl hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-indigo-600 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {mgActionLoading === group._id ? "..." : "Leave"}
+                {mgActionLoading === group._id ? "Loading..." : "Details"}
               </button>
-            )}
+
+              {isCreator ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openInviteModal(group._id)}
+                    className="p-2.5 text-teal-600 bg-teal-50 rounded-xl hover:bg-teal-100 transition-colors"
+                    title="Invite"
+                  >
+                    <EnvelopeIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => mgOpenEdit(group)}
+                    disabled={mgActionLoading === group._id}
+                    className="px-4 py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => mgDelete(group._id, group.name)}
+                    disabled={mgActionLoading === group._id}
+                    className="px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {mgActionLoading === group._id ? "..." : "Delete"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => mgLeave(group._id, group.name)}
+                  disabled={mgActionLoading === group._id}
+                  className="px-4 py-2.5 text-sm font-semibold text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {mgActionLoading === group._id ? "..." : "Leave"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -175,7 +240,7 @@ const MyGroupsTab = ({
         </div>
 
         {mgCreated.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {mgCreated.map((g) => (
               <GroupCard key={g._id} group={g} isCreator />
             ))}
@@ -202,7 +267,7 @@ const MyGroupsTab = ({
         </div>
 
         {mgJoined.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {mgJoined.map((g) => (
               <GroupCard key={g._id} group={g} isCreator={false} />
             ))}
@@ -219,197 +284,6 @@ const MyGroupsTab = ({
           </div>
         )}
       </div>
-
-      {/* Edit Modal */}
-      {showEditModal && editFormData && (
-        <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-50 p-4 sm:p-6 overflow-y-auto"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-group-title"
-        >
-          <div className="min-h-full flex items-start sm:items-center justify-center">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
-                <h3 id="edit-group-title" className="text-xl font-bold text-gray-900">Edit Study Group</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  disabled={Boolean(mgActionLoading)}
-                  className="text-2xl text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
-
-              <form onSubmit={mgUpdate} className="p-6 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block mb-2 text-sm font-semibold text-gray-700">Group Name *</label>
-                      <input
-                        type="text"
-                        value={editFormData.name}
-                        onChange={(e) => setEditFormData((p) => ({ ...p, name: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-2 text-sm font-semibold text-gray-700">Subject *</label>
-                      <input
-                        type="text"
-                        value={editFormData.subject}
-                        onChange={(e) => setEditFormData((p) => ({ ...p, subject: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-2 text-sm font-semibold text-gray-700">Description</label>
-                      <textarea
-                        value={editFormData.description}
-                        onChange={(e) => setEditFormData((p) => ({ ...p, description: e.target.value }))}
-                        rows="4"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block mb-2 text-sm font-semibold text-gray-700">Max Members</label>
-                      <input
-                        type="number"
-                        value={editFormData.maxMembers}
-                        onChange={(e) => setEditFormData((p) => ({ ...p, maxMembers: e.target.value }))}
-                        min="2"
-                        max="50"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      />
-                      <p className="mt-1 text-xs text-gray-500">Between 2 and 50 members</p>
-                    </div>
-
-                    <div>
-                      <label className="block mb-2 text-sm font-semibold text-gray-700">Meeting Schedule</label>
-                      
-                      <div className="space-y-3 mb-3 max-h-64 overflow-y-auto">
-                        {editFormData.meetingTimes && editFormData.meetingTimes.length > 0 ? (
-                          editFormData.meetingTimes.map((slot, idx) => (
-                            <div key={idx} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between gap-2">
-                              <div className="text-sm text-gray-700 flex-1">
-                                <span className="font-semibold">{slot.day}</span> {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setEditFormData((p) => ({
-                                  ...p,
-                                  meetingTimes: p.meetingTimes.filter((_, i) => i !== idx)
-                                }))}
-                                className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-3 text-xs text-gray-500 text-center bg-gray-50 border border-gray-200 rounded-lg">
-                            No meeting times added yet
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-3 bg-white border border-gray-200 rounded-lg space-y-2">
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Day</label>
-                          <select
-                            id="daySelect"
-                            defaultValue=""
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          >
-                            <option value="">Select a day</option>
-                            {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                              <option key={day} value={day}>{day}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Start</label>
-                            <input
-                              type="time"
-                              id="startTimeInput"
-                              defaultValue=""
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">End</label>
-                            <input
-                              type="time"
-                              id="endTimeInput"
-                              defaultValue=""
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const day = document.getElementById("daySelect").value;
-                            const startTime = document.getElementById("startTimeInput").value;
-                            const endTime = document.getElementById("endTimeInput").value;
-                            
-                            if (day && startTime && endTime) {
-                              setEditFormData((p) => ({
-                                ...p,
-                                meetingTimes: [...(p.meetingTimes || []), { day, startTime, endTime }]
-                              }));
-                              document.getElementById("daySelect").value = "";
-                              document.getElementById("startTimeInput").value = "";
-                              document.getElementById("endTimeInput").value = "";
-                            }
-                          }}
-                          className="w-full px-3 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-                        >
-                          + Add Time Slot
-                        </button>
-                      </div>
-                    </div>
-
-
-                  </div>
-                </div>
-
-                {mgError && (
-                  <div className="mt-4 p-3 text-sm text-red-700 border border-red-200 rounded-xl bg-red-50">
-                    {mgError}
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    disabled={Boolean(mgActionLoading)}
-                    className="flex-1 px-4 py-2.5 text-gray-700 transition border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={Boolean(mgActionLoading)}
-                    className="flex-1 px-4 py-2.5 text-white transition bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {mgActionLoading ? "Updating..." : "Update Group"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Details Modal */}
       {showDetailsModal && selectedGroup && (

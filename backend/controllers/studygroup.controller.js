@@ -9,10 +9,22 @@ const User = require("../models/User");
 
 exports.createStudyGroup = async (req, res) => {
  try {
-    const {name, description, subject, maxMembers, meetingTimes} = req.body;
+    const {name, description, subject, maxMembers, meetingTimes: meetingTimesRaw} = req.body;
     
     // Get image path if file was uploaded
     const imagePath = req.file ? `/uploads/study-groups/${req.file.filename}` : '';
+
+    // Parse meetingTimes if it's a JSON string (from FormData)
+    let meetingTimes;
+    try {
+        meetingTimes = typeof meetingTimesRaw === 'string' 
+            ? JSON.parse(meetingTimesRaw) 
+            : meetingTimesRaw;
+    } catch (parseError) {
+        return res.status(400).json({
+            message: "Invalid meetingTimes format",
+        });
+    }
 
     //Validation
     if (!name || !subject){
@@ -122,7 +134,21 @@ exports.updateStudyGroup = async (req, res) => {
         }
 
         //update fields if provided
-        const {name, description, subject, meetingTimes, maxMembers} = req.body;
+        const {name, description, subject, meetingTimes: meetingTimesRaw, maxMembers} = req.body;
+
+        // Parse meetingTimes if it's a JSON string (from FormData)
+        let meetingTimes;
+        if (meetingTimesRaw !== undefined) {
+            try {
+                meetingTimes = typeof meetingTimesRaw === 'string' 
+                    ? JSON.parse(meetingTimesRaw) 
+                    : meetingTimesRaw;
+            } catch (parseError) {
+                return res.status(400).json({
+                    message: "Invalid meetingTimes format",
+                });
+            }
+        }
 
         if (name!== undefined) studyGroup.name = name;
         if (description !== undefined) studyGroup.description = description;
@@ -514,7 +540,7 @@ exports.updateStudyGroupImage = async (req, res) => {
 exports.updateStudyGroup = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, subject, maxMembers, meetingTimes } = req.body;
+        const { name, description, subject, maxMembers, meetingTimes: meetingTimesRaw } = req.body;
 
         const studyGroup = await StudyGroup.findById(id);
         
@@ -529,6 +555,20 @@ exports.updateStudyGroup = async (req, res) => {
             return res.status(403).json({
                 message: "You can only update your own study groups",
             });
+        }
+
+        // Parse meetingTimes if it's a JSON string (from FormData)
+        let meetingTimes;
+        if (meetingTimesRaw) {
+            try {
+                meetingTimes = typeof meetingTimesRaw === 'string' 
+                    ? JSON.parse(meetingTimesRaw) 
+                    : meetingTimesRaw;
+            } catch (parseError) {
+                return res.status(400).json({
+                    message: "Invalid meetingTimes format",
+                });
+            }
         }
 
         // Update fields
