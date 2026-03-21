@@ -126,13 +126,11 @@ const Dashboard = () => {
   const [friendsError, setFriendsError] = useState("");
   const [friendActionLoading, setFriendActionLoading] = useState(null);
 
-  // ─── Profile edit state ───────────────────────────
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [profileForm, setProfileForm] = useState(null);
+  // ─── Profile state ──────────────────────────────
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
-  const [newSubjectInput, setNewSubjectInput] = useState("");
+
 
   // ─── Helpers ──────────────────────────────────────
   const getInitials = (name) => {
@@ -436,73 +434,7 @@ const Dashboard = () => {
 
   // ─── Profile edit helpers ────────────────────────
   const openProfileEdit = () => {
-    setProfileForm({
-      name: user?.name || "",
-      degree: user?.degree || "",
-      year: user?.year || "",
-      subjects: user?.subjects ? [...user.subjects] : [],
-      availableTime: {
-        weekdays: user?.availableTime?.weekdays || false,
-        weekend: user?.availableTime?.weekend || false,
-        morning: user?.availableTime?.morning || false,
-        evening: user?.availableTime?.evening || false,
-      },
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-    setProfileError("");
-    setProfileSuccess("");
-    setNewSubjectInput("");
-    setShowProfileModal(true);
-  };
-
-  const addSubject = () => {
-    const s = newSubjectInput.trim();
-    if (s && !profileForm.subjects.includes(s)) {
-      setProfileForm((p) => ({ ...p, subjects: [...p.subjects, s] }));
-      setNewSubjectInput("");
-    }
-  };
-
-  const removeSubject = (idx) => {
-    setProfileForm((p) => ({ ...p, subjects: p.subjects.filter((_, i) => i !== idx) }));
-  };
-
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    setProfileError("");
-    setProfileSuccess("");
-
-    if (!profileForm.name.trim()) { setProfileError("Name is required"); return; }
-    if (profileForm.newPassword && profileForm.newPassword !== profileForm.confirmPassword) {
-      setProfileError("New passwords do not match"); return;
-    }
-
-    setProfileLoading(true);
-    try {
-      const payload = {
-        name: profileForm.name.trim(),
-        degree: profileForm.degree.trim(),
-        year: profileForm.year.toString().trim(),
-        subjects: profileForm.subjects,
-        availableTime: profileForm.availableTime,
-      };
-      if (profileForm.newPassword) {
-        payload.currentPassword = profileForm.currentPassword;
-        payload.newPassword = profileForm.newPassword;
-      }
-
-      const data = await updateProfile(payload);
-      updateUser(data.user);
-      setProfileSuccess("Profile updated successfully!");
-      fetchDashboardData();
-      setTimeout(() => setShowProfileModal(false), 1200);
-    } catch (err) {
-      setProfileError(err.message || "Failed to update profile");
-    } finally {
-      setProfileLoading(false);
-    }
+    setActiveTab("profile");
   };
 
   // ─── Logout ───────────────────────────────────────
@@ -675,13 +607,37 @@ const Dashboard = () => {
         user={user}
         getInitials={getInitials}
         onUpdateProfile={async (data) => {
-          const result = await updateProfile(data);
-          updateUser(result.user);
-          fetchDashboardData();
+          setProfileLoading(true);
+          setProfileError("");
+          setProfileSuccess("");
+          try {
+            const result = await updateProfile(data);
+            updateUser(result.user);
+            setProfileSuccess("Profile updated successfully!");
+            fetchDashboardData();
+            setTimeout(() => setProfileSuccess(""), 3000);
+          } catch (err) {
+            setProfileError(err.message || "Failed to update profile");
+            throw err;
+          } finally {
+            setProfileLoading(false);
+          }
         }}
         onUploadImage={async (file) => {
-          const result = await uploadProfileImage(file);
-          updateUser(result.user);
+          setProfileLoading(true);
+          setProfileError("");
+          setProfileSuccess("");
+          try {
+            const result = await uploadProfileImage(file);
+            updateUser(result.user);
+            setProfileSuccess("Profile picture updated!");
+            setTimeout(() => setProfileSuccess(""), 3000);
+          } catch (err) {
+            setProfileError(err.message || "Failed to upload image");
+            throw err;
+          } finally {
+            setProfileLoading(false);
+          }
         }}
         profileLoading={profileLoading}
         profileError={profileError}
@@ -777,91 +733,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* ─── Profile Edit Modal ─── */}
-      {showProfileModal && profileForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl mx-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Edit Profile</h3>
-              <button onClick={() => setShowProfileModal(false)} className="p-1 text-gray-400 transition rounded-lg hover:text-gray-700 hover:bg-gray-100">
-                <span className="text-2xl leading-none">&times;</span>
-              </button>
-            </div>
 
-            {profileSuccess && <div className="p-3 mb-4 text-sm font-medium text-green-700 border border-green-200 bg-green-50 rounded-xl">{profileSuccess}</div>}
-            {profileError && <div className="p-3 mb-4 text-sm font-medium text-red-700 border border-red-200 bg-red-50 rounded-xl">{profileError}</div>}
-
-            <form onSubmit={handleProfileSubmit} className="space-y-5">
-              <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700">Name *</label>
-                <input type="text" value={profileForm.name} onChange={(e) => setProfileForm((p) => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
-              </div>
-
-              <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700">Email</label>
-                <input type="email" value={user?.email || ""} disabled className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1.5 text-sm font-medium text-gray-700">Degree</label>
-                  <input type="text" value={profileForm.degree} onChange={(e) => setProfileForm((p) => ({ ...p, degree: e.target.value }))} placeholder="e.g., Computer Science" className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-sm font-medium text-gray-700">Year</label>
-                  <input type="text" value={profileForm.year} onChange={(e) => setProfileForm((p) => ({ ...p, year: e.target.value }))} placeholder="e.g., 2" className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block mb-1.5 text-sm font-medium text-gray-700">Subjects</label>
-                <div className="flex gap-2 mb-2">
-                  <input type="text" value={newSubjectInput} onChange={(e) => setNewSubjectInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSubject(); } }} placeholder="Add a subject..." className="flex-1 px-4 py-2 transition border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
-                  <button type="button" onClick={addSubject} className="px-4 py-2 text-sm font-medium text-white transition bg-indigo-600 rounded-xl hover:bg-indigo-700">Add</button>
-                </div>
-                {profileForm.subjects.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {profileForm.subjects.map((s, i) => (
-                      <span key={i} className="inline-flex items-center px-3 py-1 text-sm font-medium text-indigo-700 rounded-full bg-indigo-50">
-                        {s}
-                        <button type="button" onClick={() => removeSubject(i)} className="ml-1.5 text-indigo-400 hover:text-red-500 transition">&times;</button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">Availability</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[["weekdays", "Weekdays"], ["weekend", "Weekend"], ["morning", "Morning"], ["evening", "Evening"]].map(([key, label]) => (
-                    <label key={key} className="flex items-center p-3 space-x-3 transition border border-gray-200 cursor-pointer rounded-xl hover:bg-gray-50">
-                      <input type="checkbox" checked={profileForm.availableTime[key]} onChange={() => setProfileForm((p) => ({ ...p, availableTime: { ...p.availableTime, [key]: !p.availableTime[key] } }))} className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
-                      <span className="text-sm text-gray-700">{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <p className="mb-3 text-sm font-medium text-gray-700">Change Password <span className="font-normal text-gray-400">(optional)</span></p>
-                <div className="space-y-3">
-                  <input type="password" value={profileForm.currentPassword} onChange={(e) => setProfileForm((p) => ({ ...p, currentPassword: e.target.value }))} placeholder="Current password" className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input type="password" value={profileForm.newPassword} onChange={(e) => setProfileForm((p) => ({ ...p, newPassword: e.target.value }))} placeholder="New password" className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
-                    <input type="password" value={profileForm.confirmPassword} onChange={(e) => setProfileForm((p) => ({ ...p, confirmPassword: e.target.value }))} placeholder="Confirm new password" className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowProfileModal(false)} className="flex-1 px-4 py-2.5 text-gray-700 transition border border-gray-300 rounded-xl hover:bg-gray-50 font-medium">Cancel</button>
-                <button type="submit" disabled={profileLoading} className="flex-1 px-4 py-2.5 text-white transition bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:bg-gray-400 font-medium">{profileLoading ? "Saving..." : "Save Changes"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Edit Group Modal */}
       <EditGroupModal
