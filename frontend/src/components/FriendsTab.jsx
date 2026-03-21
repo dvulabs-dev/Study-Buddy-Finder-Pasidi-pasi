@@ -56,7 +56,13 @@ const FriendsTab = ({
                 {myFriendsList.map((f, idx) => (
                   <div key={f._id} className="flex items-center justify-between p-4 transition border border-gray-200 rounded-xl hover:bg-gray-50">
                     <div className="flex items-center gap-3">
-                      <div className={`flex items-center justify-center w-11 h-11 rounded-xl text-white font-bold text-sm ${buddyColors[idx % buddyColors.length]}`}>{getInitials(f.name)}</div>
+                      <div className={`flex items-center justify-center w-11 h-11 rounded-xl text-white font-bold text-sm overflow-hidden ${buddyColors[idx % buddyColors.length]}`}>
+                        {f.profileImage ? (
+                          <img src={`http://localhost:5000${f.profileImage}`} alt={f.name} className="object-cover w-full h-full" />
+                        ) : (
+                          getInitials(f.name)
+                        )}
+                      </div>
                       <div>
                         <p className="font-semibold text-gray-900">{f.name}</p>
                         <p className="text-sm text-gray-500">{f.email}</p>
@@ -86,7 +92,13 @@ const FriendsTab = ({
                 {pendingRequests.map((r) => (
                   <div key={r._id} className="flex items-center justify-between p-4 border border-amber-200 bg-amber-50 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center text-sm font-bold text-white w-11 h-11 rounded-xl bg-amber-500">{getInitials(r.from?.name)}</div>
+                      <div className="flex items-center justify-center text-sm font-bold text-white w-11 h-11 rounded-xl bg-amber-500 overflow-hidden">
+                        {r.from?.profileImage ? (
+                          <img src={`http://localhost:5000${r.from.profileImage}`} alt={r.from?.name} className="object-cover w-full h-full" />
+                        ) : (
+                          getInitials(r.from?.name)
+                        )}
+                      </div>
                       <div>
                         <p className="font-semibold text-gray-900">{r.from?.name}</p>
                         <p className="text-sm text-gray-500">{r.from?.email}</p>
@@ -118,7 +130,13 @@ const FriendsTab = ({
                 {sentRequestsList.map((r) => (
                   <div key={r._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center text-sm font-bold text-white bg-indigo-500 w-11 h-11 rounded-xl">{getInitials(r.to?.name)}</div>
+                      <div className="flex items-center justify-center text-sm font-bold text-white bg-indigo-500 w-11 h-11 rounded-xl overflow-hidden">
+                        {r.to?.profileImage ? (
+                          <img src={`http://localhost:5000${r.to.profileImage}`} alt={r.to?.name} className="object-cover w-full h-full" />
+                        ) : (
+                          getInitials(r.to?.name)
+                        )}
+                      </div>
                       <div>
                         <p className="font-semibold text-gray-900">{r.to?.name}</p>
                         <p className="text-sm text-gray-500">{r.to?.email}</p>
