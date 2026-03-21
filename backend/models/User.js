@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    profileImage: {
+      type: String,
+      default: "",
+    },
     degree: {
       type: String,
       default: "",

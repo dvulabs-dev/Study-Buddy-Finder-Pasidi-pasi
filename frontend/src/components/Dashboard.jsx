@@ -16,6 +16,7 @@ import {
   searchStudentsBySubject,
   searchStudentsByAvailability,
   updateProfile,
+  uploadProfileImage,
 } from "../services/userService";
 import {
   sendFriendRequest as sendFriendReq,
@@ -40,6 +41,8 @@ import MyGroupsTab from "./MyGroupsTab";
 import FindBuddiesTab from "./FindBuddiesTab";
 import FriendsTab from "./FriendsTab";
 import EditGroupModal from "./EditGroupModal";
+import ProfileTab from "./ProfileTab";
+import SettingsTab from "./SettingsTab";
 import {
   MagnifyingGlassIcon,
   UserGroupIcon,
@@ -61,6 +64,7 @@ const Dashboard = () => {
   const [greeting, setGreeting] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // ─── Dashboard tab data ──────────────────────────
   const [studyGroups, setStudyGroups] = useState([]);
@@ -135,11 +139,11 @@ const Dashboard = () => {
     if (!name) return "?";
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
-  const groupColors = ["bg-blue-500","bg-purple-500","bg-emerald-500","bg-orange-500","bg-pink-500","bg-cyan-500"];
-  const buddyColors = ["bg-indigo-500","bg-teal-500","bg-rose-500","bg-amber-500","bg-violet-500"];
+  const groupColors = ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-orange-500", "bg-pink-500", "bg-cyan-500"];
+  const buddyColors = ["bg-indigo-500", "bg-teal-500", "bg-rose-500", "bg-amber-500", "bg-violet-500"];
 
-  const formatTime = (d) => d.toLocaleTimeString("en-US",{ hour:"numeric", minute:"2-digit", hour12:true });
-  const formatDate = (d) => d.toLocaleDateString("en-US",{ weekday:"long", month:"long", day:"numeric" });
+  const formatTime = (d) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  const formatDate = (d) => d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   // ─── Greeting & clock ─────────────────────────────
   useEffect(() => {
@@ -243,11 +247,11 @@ const Dashboard = () => {
 
   const mgOpenEdit = (g) => {
     setSelectedGroup(g);
-    setEditFormData({ 
-      name: g.name, 
-      description: g.description || "", 
-      subject: g.subject, 
-      maxMembers: g.maxMembers, 
+    setEditFormData({
+      name: g.name,
+      description: g.description || "",
+      subject: g.subject,
+      maxMembers: g.maxMembers,
       meetingTimes: g.meetingTimes && Array.isArray(g.meetingTimes) ? [...g.meetingTimes] : [],
       hallAllocation: g.hallAllocation ? {
         building: g.hallAllocation.building || "",
@@ -666,6 +670,31 @@ const Dashboard = () => {
         buddyColors={buddyColors}
       />
     ),
+    profile: () => (
+      <ProfileTab
+        user={user}
+        getInitials={getInitials}
+        onUpdateProfile={async (data) => {
+          const result = await updateProfile(data);
+          updateUser(result.user);
+          fetchDashboardData();
+        }}
+        onUploadImage={async (file) => {
+          const result = await uploadProfileImage(file);
+          updateUser(result.user);
+        }}
+        profileLoading={profileLoading}
+        profileError={profileError}
+        profileSuccess={profileSuccess}
+      />
+    ),
+    settings: () => (
+      <SettingsTab
+        onChangePassword={async ({ currentPassword, newPassword }) => {
+          await updateProfile({ currentPassword, newPassword });
+        }}
+      />
+    ),
   };
 
   // ════════════════════════════════════════════════════
@@ -686,10 +715,13 @@ const Dashboard = () => {
           myFriendsList={myFriendsList}
           getInitials={getInitials}
           handleLogout={handleLogout}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+          onProfileEdit={() => setActiveTab("profile")}
         />
 
         {/* ─── Main Content ─── */}
-        <div className="flex-1 lg:ml-72">
+        <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'}`}>
           {/* Top Bar */}
           <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
             <div className="flex items-center justify-between px-6 py-4 lg:px-8">
@@ -802,7 +834,7 @@ const Dashboard = () => {
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">Availability</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {[["weekdays","Weekdays"],["weekend","Weekend"],["morning","Morning"],["evening","Evening"]].map(([key, label]) => (
+                  {[["weekdays", "Weekdays"], ["weekend", "Weekend"], ["morning", "Morning"], ["evening", "Evening"]].map(([key, label]) => (
                     <label key={key} className="flex items-center p-3 space-x-3 transition border border-gray-200 cursor-pointer rounded-xl hover:bg-gray-50">
                       <input type="checkbox" checked={profileForm.availableTime[key]} onChange={() => setProfileForm((p) => ({ ...p, availableTime: { ...p.availableTime, [key]: !p.availableTime[key] } }))} className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
                       <span className="text-sm text-gray-700">{label}</span>
