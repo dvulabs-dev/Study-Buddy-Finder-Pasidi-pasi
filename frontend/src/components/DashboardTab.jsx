@@ -44,6 +44,7 @@ export const DashboardTab = ({
   handleRejectGroupInvite,
   getInitials,
   myFriendsList,
+  renderFriendButton,
 }) => {
   if (dashLoading) {
     return (
@@ -60,6 +61,7 @@ export const DashboardTab = ({
     month: 'long',
     day: 'numeric',
   })
+  const hasSharedGroupSuggestions = suggestedBuddies?.some((b) => b.sharedGroups && b.sharedGroups.length > 0)
   return (
     <div className="space-y-8">
       {dashError && (
@@ -230,70 +232,91 @@ export const DashboardTab = ({
         </div>
 
         {/* Suggested Buddies */}
-        <div className="lg:col-span-7 bg-white border border-gray-200/80 rounded-2xl shadow-sm p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">
-                Suggested Buddies
-              </h3>
-              <p className="text-sm text-gray-500">
-                People who share your interests
-              </p>
-            </div>
-            <button
-              onClick={() => setActiveTab('findbuddies')}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              Find more
-            </button>
-          </div>
+        <div className="relative lg:col-span-7 bg-white/80 border border-gray-200/80 rounded-2xl shadow-sm p-6 flex flex-col overflow-hidden">
+          {/* Blurry light gradient background */}
+          <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-indigo-100 via-sky-100 to-violet-100 rounded-full blur-3xl opacity-80" />
+          <div className="pointer-events-none absolute -bottom-12 -left-6 w-44 h-44 bg-gradient-to-br from-emerald-100 via-indigo-50 to-sky-100 rounded-full blur-3xl opacity-70" />
 
-          {suggestedBuddies.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
-              <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                <UserIcon className="w-6 h-6 text-gray-400" />
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Suggested Buddies
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {hasSharedGroupSuggestions
+                    ? 'Classmates from your study groups'
+                    : 'People who share your interests'}
+                </p>
               </div>
-              <p className="text-sm font-medium text-gray-900 mb-1">
-                No suggestions yet
-              </p>
-              <p className="text-xs text-gray-500">
-                Join more groups to find study buddies.
-              </p>
+              <button
+                onClick={() => setActiveTab('findbuddies')}
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                Find more
+              </button>
             </div>
-          ) : (
-            <div className="space-y-4 flex-1">
-              {suggestedBuddies.slice(0, 4).map((buddy) => (
-                <div
-                  key={buddy._id}
-                  className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-sm font-bold text-indigo-700 flex-shrink-0 overflow-hidden">
-                      {buddy.profileImage ? (
-                        <img src={`${API_BASE}${buddy.profileImage}`} alt={buddy.name} className="w-full h-full object-cover" />
-                      ) : (
-                        getInitials(buddy.name)
-                      )}
+
+            {suggestedBuddies.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 bg-white/70 rounded-full flex items-center justify-center mb-3 shadow-sm">
+                  <UserIcon className="w-6 h-6 text-gray-400" />
+                </div>
+                <p className="text-sm font-medium text-gray-900 mb-1">
+                  No suggestions yet
+                </p>
+                <p className="text-xs text-gray-500">
+                  Join or create study groups to discover new buddies.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 flex-1">
+                {suggestedBuddies.slice(0, 4).map((buddy) => (
+                  <div
+                    key={buddy._id}
+                    className="flex items-center justify-between p-3 rounded-xl border border-gray-100/80 bg-white/70 backdrop-blur-sm hover:border-indigo-100 hover:bg-indigo-50/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-sm font-bold text-indigo-700 flex-shrink-0 overflow-hidden">
+                        {buddy.profileImage ? (
+                          <img src={`${API_BASE}${buddy.profileImage}`} alt={buddy.name} className="w-full h-full object-cover" />
+                        ) : (
+                          getInitials(buddy.name)
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {buddy.name}
+                        </p>
+                        {buddy.sharedGroups && buddy.sharedGroups.length > 0 ? (
+                          <p className="text-[11px] text-gray-500 truncate">
+                            Shared groups: {buddy.sharedGroups.slice(0, 2).map((g) => g.name).join(', ')}
+                            {buddy.sharedGroups.length > 2 && ' +' + (buddy.sharedGroups.length - 2)}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-gray-500 truncate">
+                            {buddy.degree || buddy.subjects?.slice(0, 2).join(', ')}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {buddy.name}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {buddy.degree || buddy.subjects?.slice(0, 2).join(', ')}
-                      </p>
+                    <div className="ml-3 flex-shrink-0">
+                      {renderFriendButton
+                        ? renderFriendButton(buddy._id)
+                        : (
+                          <button
+                            onClick={() => setActiveTab('findbuddies')}
+                            className="px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                          >
+                            Connect
+                          </button>
+                        )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => setActiveTab('findbuddies')}
-                    className="ml-3 flex-shrink-0 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
-                  >
-                    Connect
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

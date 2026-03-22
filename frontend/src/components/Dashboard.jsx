@@ -161,14 +161,64 @@ const Dashboard = () => {
       const groupsRes = await getAllStudyGroups();
       const all = groupsRes.studyGroups || [];
       setStudyGroups(all);
-      const uid = user?._id || user?.id;
-      setMyGroupsList(all.filter((g) => g.members?.some((m) => (m._id || m).toString() === uid)));
-      if (user?.subjects?.length > 0) {
+      const uid = (user?._id || user?.id || "").toString();
+
+      // Build my groups list from all groups
+      const myGroups = all.filter((g) =>
+        g.members?.some((m) => ((m._id || m.id || m) || "").toString() === uid)
+      );
+      setMyGroupsList(myGroups);
+
+      // ── Suggest buddies from same study groups ──
+      let buddySuggestions = [];
+      try {
+        // Load all students so we have full profile data
+        const studentsRes = await getAllStudents();
+        const allStudents = studentsRes.users || [];
+
+        if (myGroups.length > 0 && allStudents.length > 0) {
+          const suggestionsMap = new Map();
+
+          allStudents.forEach((student) => {
+            const sid = (student._id || student.id || "").toString();
+            if (!sid || sid === uid) return; // skip self / invalid ids
+
+            // Find groups this student shares with the current user
+            const sharedGroups = myGroups.filter((g) =>
+              g.members?.some((m) => ((m._id || m.id || m) || "").toString() === sid)
+            );
+
+            if (sharedGroups.length > 0) {
+              const existing = suggestionsMap.get(sid);
+              const payload = {
+                ...student,
+                sharedGroups: sharedGroups.map((g) => ({
+                  _id: g._id,
+                  name: g.name,
+                  subject: g.subject,
+                })),
+              };
+              suggestionsMap.set(sid, existing ? { ...existing, ...payload } : payload);
+            }
+          });
+
+          buddySuggestions = Array.from(suggestionsMap.values());
+        }
+      } catch (e) {
+        console.error("Failed to build same-group buddy suggestions", e);
+      }
+
+      // Fallback: if no same-group buddies, use subject-based suggestions as before
+      if (buddySuggestions.length === 0 && user?.subjects?.length > 0) {
         try {
           const b = await searchStudentsBySubject(user.subjects[0]);
-          setSuggestedBuddies((b.users || []).slice(0, 5));
-        } catch { setSuggestedBuddies([]); }
+          buddySuggestions = (b.users || []).slice(0, 5);
+        } catch {
+          buddySuggestions = [];
+        }
       }
+
+      setSuggestedBuddies(buddySuggestions.slice(0, 8));
       // Load pending friend requests & group invites for dashboard
       try {
         const [pData, giData] = await Promise.all([getPendingRequests(), getMyGroupInvites()]);
@@ -349,6 +399,11 @@ const Dashboard = () => {
     }
   }, [activeTab, fbSearchType, loadFriendStatuses, fbLoadAll]);
 
+  // Also load friend statuses once so dashboard suggestions can show correct buttons
+  useEffect(() => {
+    loadFriendStatuses();
+  }, [loadFriendStatuses]);
+
   const fbSimpleSearch = async (e) => {
     e.preventDefault();
     if (!fbSubject.trim()) { setFbError("Enter a subject"); return; }
@@ -515,6 +570,7 @@ const Dashboard = () => {
         groupColors={groupColors}
         buddyColors={buddyColors}
         myFriendsList={myFriendsList}
+        renderFriendButton={renderFriendButton}
       />
     ),
     studygroups: () => (
