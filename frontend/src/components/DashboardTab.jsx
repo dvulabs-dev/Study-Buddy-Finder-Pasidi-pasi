@@ -169,21 +169,22 @@ export const DashboardTab = ({
       </div>
 
       {/* 3. Two-column row: Profile Card + Suggested Buddies */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
         {/* Profile Card */}
-        <div className="lg:col-span-5 bg-white border border-gray-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-          <div className="h-24 bg-gradient-to-r from-indigo-500 to-violet-600 relative">
+        <div className="w-full">
+          <div className="bg-white border border-gray-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
+          <div className="h-20 bg-gradient-to-r from-indigo-500 to-violet-600 relative">
             <button
               onClick={openProfileEdit}
-              className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg backdrop-blur-sm transition-colors"
+              className="absolute top-3 right-3 p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg backdrop-blur-sm transition-colors"
               aria-label="Edit Profile"
             >
-              <PenSquareIcon className="w-4 h-4" />
+              <PenSquareIcon className="w-3 h-3" />
             </button>
           </div>
-          <div className="px-6 pb-6 flex-1 flex flex-col items-center text-center -mt-12 relative z-10">
-            <div className="w-24 h-24 bg-white rounded-full p-1.5 mb-4 shadow-sm">
-              <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-violet-100 rounded-full flex items-center justify-center text-3xl font-bold text-indigo-600 border border-indigo-200/50 overflow-hidden">
+          <div className="px-4 pb-4 flex-1 flex flex-col items-center text-center -mt-10 relative z-10">
+            <div className="w-20 h-20 bg-white rounded-full p-1 mb-3 shadow-sm">
+              <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-violet-100 rounded-full flex items-center justify-center text-2xl font-bold text-indigo-600 border border-indigo-200/50 overflow-hidden">
                 {user?.profileImage ? (
                   <img src={`${API_BASE}${user.profileImage}`} alt={user?.name} className="w-full h-full object-cover" />
                 ) : (
@@ -191,20 +192,20 @@ export const DashboardTab = ({
                 )}
               </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
+            <h3 className="text-lg font-bold text-gray-900 mb-0.5">
               {user?.name || 'Student'}
             </h3>
-            <p className="text-sm font-medium text-indigo-600 mb-2">
+            <p className="text-xs font-medium text-indigo-600 mb-1">
               {user?.degree || 'Degree Program'}
             </p>
-            <div className="flex items-center text-xs text-gray-500 mb-6">
-              <MapPinIcon className="w-3.5 h-3.5 mr-1" />
+            <div className="flex items-center text-[10px] text-gray-500 mb-4">
+              <MapPinIcon className="w-3 h-3 mr-0.5" />
               {user?.university || 'University'}
             </div>
 
-            <div className="w-full grid grid-cols-3 gap-2 pt-6 border-t border-gray-100 mt-auto">
+            <div className="w-full grid grid-cols-3 gap-1 pt-4 border-t border-gray-100 mt-auto">
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-base font-bold text-gray-900">
                   {myGroupsList.length}
                 </p>
                 <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
@@ -230,20 +231,18 @@ export const DashboardTab = ({
             </div>
           </div>
         </div>
+        </div>
 
         {/* Suggested Buddies */}
-        <div className="relative lg:col-span-7 bg-white/80 border border-gray-200/80 rounded-2xl shadow-sm p-6 flex flex-col overflow-hidden">
-          {/* Blurry light gradient background */}
-          <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-indigo-100 via-sky-100 to-violet-100 rounded-full blur-3xl opacity-80" />
-          <div className="pointer-events-none absolute -bottom-12 -left-6 w-44 h-44 bg-gradient-to-br from-emerald-100 via-indigo-50 to-sky-100 rounded-full blur-3xl opacity-70" />
-
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="flex items-center justify-between mb-6">
+        <div className="w-full">
+          <div className="rounded-2xl shadow-sm overflow-hidden flex flex-col h-full" style={{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+            <div className="p-4 relative z-10 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-base font-bold text-white">
                   Suggested Buddies
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-white/80">
                   {hasSharedGroupSuggestions
                     ? 'Classmates from your study groups'
                     : 'People who share your interests'}
@@ -251,33 +250,33 @@ export const DashboardTab = ({
               </div>
               <button
                 onClick={() => setActiveTab('findbuddies')}
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                className="text-xs font-medium text-white hover:text-white/80"
               >
                 Find more
               </button>
             </div>
 
             {suggestedBuddies.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
-                <div className="w-12 h-12 bg-white/70 rounded-full flex items-center justify-center mb-3 shadow-sm">
-                  <UserIcon className="w-6 h-6 text-gray-400" />
+              <div className="flex-1 flex flex-col items-center justify-center py-4 text-center">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2 shadow-sm">
+                  <UserIcon className="w-5 h-5 text-white/70" />
                 </div>
-                <p className="text-sm font-medium text-gray-900 mb-1">
+                <p className="text-xs font-medium text-white mb-0.5">
                   No suggestions yet
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-[10px] text-white/70">
                   Join or create study groups to discover new buddies.
                 </p>
               </div>
             ) : (
-              <div className="space-y-4 flex-1">
+              <div className="space-y-2 flex-1">
                 {suggestedBuddies.slice(0, 4).map((buddy) => (
                   <div
                     key={buddy._id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-gray-100/80 bg-white/70 backdrop-blur-sm hover:border-indigo-100 hover:bg-indigo-50/50 transition-colors"
+                    className="flex items-center justify-between p-2 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm hover:border-white/40 hover:bg-white/15 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-sm font-bold text-indigo-700 flex-shrink-0 overflow-hidden">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-xs font-bold text-indigo-700 flex-shrink-0 overflow-hidden">
                         {buddy.profileImage ? (
                           <img src={`${API_BASE}${buddy.profileImage}`} alt={buddy.name} className="w-full h-full object-cover" />
                         ) : (
@@ -285,28 +284,28 @@ export const DashboardTab = ({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
+                        <p className="text-xs font-semibold text-white truncate">
                           {buddy.name}
                         </p>
                         {buddy.sharedGroups && buddy.sharedGroups.length > 0 ? (
-                          <p className="text-[11px] text-gray-500 truncate">
+                          <p className="text-[9px] text-white/70 truncate">
                             Shared groups: {buddy.sharedGroups.slice(0, 2).map((g) => g.name).join(', ')}
                             {buddy.sharedGroups.length > 2 && ' +' + (buddy.sharedGroups.length - 2)}
                           </p>
                         ) : (
-                          <p className="text-[11px] text-gray-500 truncate">
+                          <p className="text-[9px] text-white/70 truncate">
                             {buddy.degree || buddy.subjects?.slice(0, 2).join(', ')}
                           </p>
                         )}
                       </div>
                     </div>
-                    <div className="ml-3 flex-shrink-0">
+                    <div className="ml-2 flex-shrink-0">
                       {renderFriendButton
                         ? renderFriendButton(buddy._id)
                         : (
                           <button
                             onClick={() => setActiveTab('findbuddies')}
-                            className="px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                            className="px-2 py-1 text-[10px] font-medium text-indigo-700 bg-white/90 rounded-md hover:bg-white transition-colors"
                           >
                             Connect
                           </button>
@@ -316,6 +315,7 @@ export const DashboardTab = ({
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

@@ -713,7 +713,7 @@ const Dashboard = () => {
   //  MAIN LAYOUT
   // ════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <div className="flex min-h-screen">
         {/* ─── Sidebar ─── */}
         <Sidebar
@@ -747,7 +747,7 @@ const Dashboard = () => {
           </div>
 
           {/* Page content */}
-          <div className="p-6 lg:p-8">
+          <div className="p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-10">
             {tabContent[activeTab]()}
           </div>
         </div>
