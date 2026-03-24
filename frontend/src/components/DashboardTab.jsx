@@ -169,30 +169,7 @@ export const DashboardTab = ({
         <div className="absolute bottom-0 z-0 w-48 h-48 -mb-20 rounded-full pointer-events-none right-40 bg-gradient-to-br from-sky-200/40 to-indigo-200/40 blur-3xl" />
       </div>
 
-      {/* Scrolling Image */}
-      <div className="overflow-hidden bg-white border shadow-sm border-gray-200/80 rounded-3xl">
-        <div className="relative w-full">
-          <div className="flex items-center gap-10 py-4 sb-marquee-track">
-            {(() => {
-              const logos = ['/william.png', '/image.png']
-              const base = Array.from({ length: 8 }).flatMap(() => logos)
-              const track = [...base, ...base]
-
-              return track.map((src, i) => (
-                <img
-                  key={`${src}-${i}`}
-                  src={src}
-                  alt=""
-                  aria-hidden="true"
-                  className="object-contain w-auto pointer-events-none select-none h-14 sm:h-16"
-                  loading="lazy"
-                  draggable={false}
-                />
-              ))
-            })()}
-          </div>
-        </div>
-      </div>
+      {/*  */}
 
       {/* 2. Stats Row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -252,7 +229,7 @@ export const DashboardTab = ({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold tracking-wide text-white/90 uppercase truncate">
+                  <p className="text-xs font-semibold tracking-wide uppercase truncate text-white/90">
                     {stat.label}
                   </p>
                   <p className="mt-1 text-3xl font-extrabold text-white tabular-nums">

@@ -32,7 +32,7 @@ import { CheckCircleIcon as CheckCircleSolid } from "@heroicons/react/24/solid";
 import CreateGroupModal from "./CreateGroupModal";
 import StaticTimePickerLandscape from "./StaticTimePickerLandscape";
 
-const HERO_IMAGES = ["/Faculty-Societies.jpg", "/Students-Interactive-Society.jpg"];
+const HERO_IMAGES = ["/Students-Interactive-Society.jpg", "/Students-Interactive-Society.jpg"];
 
 const StudyGroupsTab = ({
   user,
@@ -396,7 +396,7 @@ const StudyGroupsTab = ({
                             onChange={(newTime) => setPendingTime(newTime)}
                             label="Select Start Time"
                           />
-                          <div className="mt-4 flex gap-3">
+                          <div className="flex gap-3 mt-4">
                             <button
                               type="button"
                               onClick={() => setOpenTimePicker({ type: null })}
@@ -443,7 +443,7 @@ const StudyGroupsTab = ({
                             onChange={(newTime) => setPendingTime(newTime)}
                             label="Select End Time"
                           />
-                          <div className="mt-4 flex gap-3">
+                          <div className="flex gap-3 mt-4">
                             <button
                               type="button"
                               onClick={() => setOpenTimePicker({ type: null })}
