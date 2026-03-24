@@ -26,7 +26,10 @@ const MyGroupsTab = ({
   const [imagePreview, setImagePreview] = useState(null);
   const [editImageFile, setEditImageFile] = useState(null);
   const [openTimePicker, setOpenTimePicker] = useState({ type: null });
+  const [pendingEditTime, setPendingEditTime] = useState("");
   const [newTimeSlot, setNewTimeSlot] = useState({ day: "", startTime: "", endTime: "" });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Reset local edit states when modal opens/closes
   useEffect(() => {
@@ -36,6 +39,16 @@ const MyGroupsTab = ({
       setNewTimeSlot({ day: "", startTime: "", endTime: "" });
     }
   }, [showEditModal]);
+
+  useEffect(() => {
+    if (openTimePicker.type === "start") {
+      setPendingEditTime(newTimeSlot.startTime || "09:00");
+    } else if (openTimePicker.type === "end") {
+      setPendingEditTime(newTimeSlot.endTime || "11:00");
+    } else {
+      setPendingEditTime("");
+    }
+  }, [openTimePicker.type, newTimeSlot.startTime, newTimeSlot.endTime]);
   
   // Helper function to convert 24-hour time to 12-hour format with AM/PM
   const formatTime = (time24) => {
@@ -170,6 +183,28 @@ const MyGroupsTab = ({
     }
 
     mgUpdate(formData);
+  };
+
+  const openDeleteModal = (group) => {
+    if (!group?._id) return;
+    setDeleteTarget({ id: group._id, name: group.name || "this group" });
+    setShowDeleteConfirm(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (deleteTarget?.id && mgActionLoading === deleteTarget.id) return;
+    setShowDeleteConfirm(false);
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?.id) return;
+    try {
+      await mgDelete(deleteTarget.id, deleteTarget.name);
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeleteTarget(null);
+    }
   };
 
   if (mgLoading) {
@@ -338,7 +373,7 @@ const MyGroupsTab = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => mgDelete(group._id, group.name)}
+                    onClick={() => openDeleteModal(group)}
                     disabled={mgActionLoading === group._id}
                     className="px-4 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
@@ -442,33 +477,96 @@ const MyGroupsTab = ({
         )}
       </div>
 
+      {/* Delete Confirm Modal */}
+      {showDeleteConfirm && deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 p-4 bg-black/50 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-group-title"
+          onClick={(e) => e.target === e.currentTarget && closeDeleteModal()}
+        >
+          <div className="flex items-start justify-center min-h-full sm:items-center">
+            <div className="w-full max-w-md overflow-hidden bg-white shadow-2xl rounded-2xl">
+              <div className="px-6 py-5 border-b border-gray-200">
+                <h3 id="delete-group-title" className="text-lg font-bold text-gray-900">
+                  Delete group?
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  You are about to delete <span className="font-semibold text-gray-900">{deleteTarget.name}</span>. This action cannot be undone.
+                </p>
+              </div>
+
+              <div className="px-6 py-5">
+                <div className="p-4 border border-red-200 rounded-2xl bg-red-50">
+                  <p className="text-sm font-semibold text-red-800">Warning</p>
+                  <p className="mt-1 text-sm text-red-700">All group details and membership info will be removed.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={closeDeleteModal}
+                  disabled={mgActionLoading === deleteTarget.id}
+                  className="px-4 py-2 text-sm font-semibold text-gray-700 transition bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={mgActionLoading === deleteTarget.id}
+                  className="px-4 py-2 text-sm font-semibold text-white transition bg-red-600 rounded-xl hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {mgActionLoading === deleteTarget.id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Modal */}
       {showEditModal && editFormData && (
         <div
-          className="fixed inset-0 z-50 p-4 overflow-y-auto bg-black bg-opacity-50 sm:p-6"
+          className="fixed inset-0 z-50 p-4 overflow-y-auto bg-black/50 backdrop-blur-sm sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-group-title"
+          onClick={(e) => e.target === e.currentTarget && !mgActionLoading && setShowEditModal(false)}
         >
           <div className="flex items-start justify-center min-h-full sm:items-center">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
-                <h3 id="edit-group-title" className="text-xl font-bold text-gray-900">Edit Study Group</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  disabled={Boolean(mgActionLoading)}
-                  className="text-2xl text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Close"
-                >
-                  ×
-                </button>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+              <div className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600" />
+                <div className="relative flex items-center justify-between px-6 py-4">
+                  <div>
+                    <h3 id="edit-group-title" className="flex items-center gap-2 text-xl font-bold text-white">
+                      <UserGroupIcon className="w-6 h-6" />
+                      Edit Study Group
+                    </h3>
+                    <p className="mt-1 text-sm text-indigo-100">
+                      Update group details and schedule
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    disabled={Boolean(mgActionLoading)}
+                    className="p-2 transition rounded-lg text-white/80 hover:text-white bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
-              <form id="edit-group-form" onSubmit={handleEditSubmit} className="flex-1 min-h-0 p-6 overflow-y-auto">
+              <form id="edit-group-form" onSubmit={handleEditSubmit} className="flex-1 min-h-0 p-6 space-y-6 overflow-y-auto">
                 {/* ── Basic Info ── */}
-                <div className="mb-6">
-                  <h4 className="pb-1 mb-3 text-sm font-bold tracking-wide text-indigo-700 uppercase border-b border-indigo-100">Basic Information</h4>
+                <div className="p-5 bg-white border border-gray-200 rounded-2xl">
+                  <h4 className="text-sm font-bold tracking-wide text-indigo-700 uppercase">Basic Information</h4>
+                  <div className="w-full h-px mt-4 bg-indigo-100" />
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label className="block mb-1.5 text-sm font-semibold text-gray-700">Group Name <span className="text-red-500">*</span></label>
@@ -516,10 +614,11 @@ const MyGroupsTab = ({
                 </div>
 
                 {/* ── Hall Allocation ── */}
-                <div className="mb-6">
-                  <h4 className="pb-1 mb-3 text-sm font-bold tracking-wide text-indigo-700 uppercase border-b border-indigo-100">
+                <div className="p-5 bg-white border border-gray-200 rounded-2xl">
+                  <h4 className="text-sm font-bold tracking-wide text-indigo-700 uppercase">
                     Hall Allocation <span className="text-red-500">*</span>
                   </h4>
+                  <div className="w-full h-px mt-4 bg-indigo-100" />
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {/* Building */}
                     <div>
@@ -575,8 +674,9 @@ const MyGroupsTab = ({
                 </div>
 
                 {/* ── Group Image ── */}
-                <div className="mb-6">
-                  <h4 className="pb-1 mb-3 text-sm font-bold tracking-wide text-indigo-700 uppercase border-b border-indigo-100">Group Image (Optional)</h4>
+                <div className="p-5 bg-white border border-gray-200 rounded-2xl">
+                  <h4 className="text-sm font-bold tracking-wide text-indigo-700 uppercase">Group Image (Optional)</h4>
+                  <div className="w-full h-px mt-4 bg-indigo-100" />
 
                   {editImageSrc && (
                     <div className="mb-3">
@@ -613,8 +713,9 @@ const MyGroupsTab = ({
                 </div>
 
                 {/* ── Meeting Schedule ── */}
-                <div className="mb-4">
-                  <h4 className="pb-1 mb-3 text-sm font-bold tracking-wide text-indigo-700 uppercase border-b border-indigo-100">Meeting Schedule <span className="text-red-500">*</span></h4>
+                <div className="p-5 bg-white border border-gray-200 rounded-2xl">
+                  <h4 className="text-sm font-bold tracking-wide text-indigo-700 uppercase">Meeting Schedule <span className="text-red-500">*</span></h4>
+                  <div className="w-full h-px mt-4 bg-indigo-100" />
 
                   {/* Existing slots */}
                   <div className="mb-3 space-y-2">
@@ -645,7 +746,7 @@ const MyGroupsTab = ({
                   </div>
 
                   {/* Add new slot */}
-                  <div className="p-4 space-y-3 bg-white border border-gray-200 rounded-xl">
+                  <div className="p-4 space-y-3 border border-gray-200 bg-gray-50 rounded-xl">
                     <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">Add a time slot</p>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                       <div>
@@ -674,7 +775,30 @@ const MyGroupsTab = ({
                           <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
                               <button type="button" onClick={() => setOpenTimePicker({ type: null })} className="absolute z-10 flex items-center justify-center w-8 h-8 text-2xl text-gray-500 bg-white rounded-full shadow-md top-2 right-2 hover:text-gray-700">×</button>
-                              <StaticTimePickerLandscape value={newTimeSlot.startTime || "09:00"} onChange={(t) => { setNewTimeSlot((p) => ({ ...p, startTime: t })); setOpenTimePicker({ type: null }); }} label="Select Start Time" />
+                              <div className="px-4 pt-4">
+                                <p className="text-sm font-medium text-gray-900">Selected</p>
+                                <p className="text-sm text-gray-600">{pendingEditTime ? formatTime(pendingEditTime) : "—"}</p>
+                              </div>
+                              <StaticTimePickerLandscape value={pendingEditTime || newTimeSlot.startTime || "09:00"} onChange={(t) => setPendingEditTime(t)} label="Select Start Time" />
+                              <div className="flex gap-3 px-4 pb-4">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenTimePicker({ type: null })}
+                                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setNewTimeSlot((p) => ({ ...p, startTime: pendingEditTime }));
+                                    setOpenTimePicker({ type: null });
+                                  }}
+                                  className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+                                >
+                                  Done
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -692,7 +816,30 @@ const MyGroupsTab = ({
                           <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-lg shadow-2xl relative max-w-[600px] w-full">
                               <button type="button" onClick={() => setOpenTimePicker({ type: null })} className="absolute z-10 flex items-center justify-center w-8 h-8 text-2xl text-gray-500 bg-white rounded-full shadow-md top-2 right-2 hover:text-gray-700">×</button>
-                              <StaticTimePickerLandscape value={newTimeSlot.endTime || "11:00"} onChange={(t) => { setNewTimeSlot((p) => ({ ...p, endTime: t })); setOpenTimePicker({ type: null }); }} label="Select End Time" />
+                              <div className="px-4 pt-4">
+                                <p className="text-sm font-medium text-gray-900">Selected</p>
+                                <p className="text-sm text-gray-600">{pendingEditTime ? formatTime(pendingEditTime) : "—"}</p>
+                              </div>
+                              <StaticTimePickerLandscape value={pendingEditTime || newTimeSlot.endTime || "11:00"} onChange={(t) => setPendingEditTime(t)} label="Select End Time" />
+                              <div className="flex gap-3 px-4 pb-4">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenTimePicker({ type: null })}
+                                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setNewTimeSlot((p) => ({ ...p, endTime: pendingEditTime }));
+                                    setOpenTimePicker({ type: null });
+                                  }}
+                                  className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+                                >
+                                  Done
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}

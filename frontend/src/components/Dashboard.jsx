@@ -41,7 +41,6 @@ import StudyGroupsTab from "./StudyGroupsTab";
 import MyGroupsTab from "./MyGroupsTab";
 import FindBuddiesTab from "./FindBuddiesTab";
 import FriendsTab from "./FriendsTab";
-import EditGroupModal from "./EditGroupModal";
 import ProfileTab from "./ProfileTab";
 import SettingsTab from "./SettingsTab";
 import {
@@ -347,7 +346,6 @@ const Dashboard = () => {
   };
 
   const mgDelete = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     setMgActionLoading(id); setMgError("");
     try { await deleteStudyGroup(id); toast.success("Deleted!"); loadMyGroups(); fetchDashboardData(); }
     catch (e) { setMgError(e.message || "Delete failed"); }
@@ -817,15 +815,6 @@ const Dashboard = () => {
       )}
 
 
-
-      {/* Edit Group Modal */}
-      <EditGroupModal
-        isOpen={showEditModal}
-        group={selectedGroup}
-        onClose={() => setShowEditModal(false)}
-        onUpdateGroup={mgUpdate}
-        loading={Boolean(mgActionLoading)}
-      />
 
       <style>{`.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}`}</style>
     </div>

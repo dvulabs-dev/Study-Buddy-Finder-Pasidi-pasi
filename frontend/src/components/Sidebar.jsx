@@ -28,7 +28,9 @@ const Sidebar = ({
   setCollapsed,
   onProfileEdit,
 }) => {
-  const notificationCount = pendingRequests.length + groupInvitesList.length;
+  const notificationCount =
+    (pendingRequests?.length || 0) +
+    (groupInvitesList?.length || 0);
   const API_BASE = "http://localhost:5000";
 
   // Divider index — items after this are in the "secondary" section
