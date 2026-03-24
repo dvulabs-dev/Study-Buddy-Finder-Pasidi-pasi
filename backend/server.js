@@ -1,13 +1,18 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const connectDB = require("./config/db");
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connect Database
 connectDB();
@@ -22,6 +27,7 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/users", require("./routes/user.route"));
+app.use("/api/profile", require("./routes/profile.routes"));
 app.use("/api/studygroups", require("./routes/studygroup.routes"));
 app.use("/api/admin", require("./routes/admin.routes"));
 app.use("/api/friends", require("./routes/friend.routes"));
