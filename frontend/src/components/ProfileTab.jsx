@@ -31,11 +31,92 @@ const ProfileTab = ({
         subjects: user?.subjects ? [...user.subjects] : [],
         availableTime: user?.availableTime || [],
     });
+    const [newAvailability, setNewAvailability] = useState({
+        day: "",
+        startTime: "09:00",
+        endTime: "17:00",
+    });
     const [newSubjectInput, setNewSubjectInput] = useState("");
     const [imageUploading, setImageUploading] = useState(false);
     const [localError, setLocalError] = useState("");
     const [localSuccess, setLocalSuccess] = useState("");
     const fileInputRef = useRef(null);
+
+    const timeToMinutes = (t) => {
+        if (!t || typeof t !== "string" || !t.includes(":")) return null;
+        const [hhRaw, mmRaw] = t.split(":");
+        const hh = Number(hhRaw);
+        const mm = Number(mmRaw);
+        if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+        if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+        return hh * 60 + mm;
+    };
+
+    const normalizeSlot = (slot) => {
+        if (!slot || typeof slot !== "object") return null;
+        const day = typeof slot.day === "string" ? slot.day : "";
+        const startTime = typeof slot.startTime === "string" ? slot.startTime : "";
+        const endTime = typeof slot.endTime === "string" ? slot.endTime : "";
+        if (!day || !startTime || !endTime) return null;
+        return { day, startTime, endTime };
+    };
+
+    const formatSlot = (slot) => {
+        const s = normalizeSlot(slot);
+        if (!s) return "";
+        return `${s.day}: ${s.startTime} - ${s.endTime}`;
+    };
+
+    const addAvailabilitySlot = () => {
+        setLocalError("");
+        const day = (newAvailability.day || "").trim();
+        const startTime = (newAvailability.startTime || "").trim();
+        const endTime = (newAvailability.endTime || "").trim();
+
+        if (!day) {
+            setLocalError("Please select a day");
+            return;
+        }
+
+        const startMins = timeToMinutes(startTime);
+        const endMins = timeToMinutes(endTime);
+        if (startMins == null || endMins == null) {
+            setLocalError("Please select valid start and end times");
+            return;
+        }
+        if (endMins <= startMins) {
+            setLocalError("End time must be after start time");
+            return;
+        }
+
+        setFormData((p) => {
+            const next = [...(p.availableTime || [])];
+            const exists = next.some(
+                (s) =>
+                    s?.day === day &&
+                    s?.startTime === startTime &&
+                    s?.endTime === endTime
+            );
+            if (!exists) next.push({ day, startTime, endTime });
+            return { ...p, availableTime: next };
+        });
+    };
+
+    const removeAvailabilitySlot = (slotToRemove) => {
+        const s = normalizeSlot(slotToRemove);
+        if (!s) return;
+        setFormData((p) => ({
+            ...p,
+            availableTime: (p.availableTime || []).filter(
+                (x) =>
+                    !(
+                        x?.day === s.day &&
+                        x?.startTime === s.startTime &&
+                        x?.endTime === s.endTime
+                    )
+            ),
+        }));
+    };
 
     const profileImageUrl = user?.profileImage
         ? `${API_BASE}${user.profileImage}`
@@ -48,6 +129,11 @@ const ProfileTab = ({
             year: user?.year || "",
             subjects: user?.subjects ? [...user.subjects] : [],
             availableTime: user?.availableTime || [],
+        });
+        setNewAvailability({
+            day: "",
+            startTime: "09:00",
+            endTime: "17:00",
         });
         setIsEditing(true);
         setLocalError("");
@@ -154,13 +240,7 @@ const ProfileTab = ({
             {/* Profile Card */}
             <div className="overflow-hidden bg-white border border-gray-200 shadow-sm rounded-2xl">
                 {/* Banner */}
-                <div
-                    className="relative h-36"
-                    style={{
-                        background:
-                            "linear-gradient(135deg, #7c3aed 0%, #6366f1 40%, #818cf8 100%)",
-                    }}
-                >
+                <div className="relative h-36 bg-gradient-to-r from-indigo-500 to-violet-600">
                     <div className="absolute rounded-full -top-8 -right-8 w-32 h-32 bg-white/10"></div>
                     <div className="absolute w-20 h-20 rounded-full -bottom-6 -left-6 bg-white/10"></div>
                 </div>
@@ -389,6 +469,113 @@ const ProfileTab = ({
                                 )
                             ) : (
                                 <p className="text-sm text-gray-400">No subjects added yet</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Availability */}
+                    <div className="mt-8 space-y-1.5">
+                        <label className="flex items-center gap-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                            <ClockIcon className="w-3.5 h-3.5" />
+                            Availability
+                        </label>
+
+                        {isEditing && (
+                            <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                                <div className="grid gap-3 sm:grid-cols-3">
+                                    <div>
+                                        <label className="block mb-1 text-xs font-medium text-gray-600">Day</label>
+                                        <select
+                                            value={newAvailability.day}
+                                            onChange={(e) =>
+                                                setNewAvailability((p) => ({ ...p, day: e.target.value }))
+                                            }
+                                            className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                        >
+                                            <option value="">Select day</option>
+                                            {[
+                                                "Monday",
+                                                "Tuesday",
+                                                "Wednesday",
+                                                "Thursday",
+                                                "Friday",
+                                                "Saturday",
+                                                "Sunday",
+                                            ].map((d) => (
+                                                <option key={d} value={d}>
+                                                    {d}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 text-xs font-medium text-gray-600">Start</label>
+                                        <input
+                                            type="time"
+                                            value={newAvailability.startTime || "09:00"}
+                                            onChange={(e) =>
+                                                setNewAvailability((p) => ({ ...p, startTime: e.target.value }))
+                                            }
+                                            className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block mb-1 text-xs font-medium text-gray-600">End</label>
+                                        <input
+                                            type="time"
+                                            value={newAvailability.endTime || "17:00"}
+                                            onChange={(e) =>
+                                                setNewAvailability((p) => ({ ...p, endTime: e.target.value }))
+                                            }
+                                            className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end mt-3">
+                                    <button
+                                        type="button"
+                                        onClick={addAvailabilitySlot}
+                                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition"
+                                    >
+                                        Add slot
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex flex-wrap gap-2">
+                            {(
+                                (isEditing ? formData.availableTime : user?.availableTime) || []
+                            ).filter(Boolean).length > 0 ? (
+                                (isEditing ? formData.availableTime : user?.availableTime || [])
+                                    .map(normalizeSlot)
+                                    .filter(Boolean)
+                                    .map((slot, idx) => (
+                                        <span
+                                            key={`${slot.day}-${slot.startTime}-${slot.endTime}-${idx}`}
+                                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-full"
+                                            title={formatSlot(slot)}
+                                        >
+                                            {slot.day} • {slot.startTime}-{slot.endTime}
+                                            {isEditing && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeAvailabilitySlot(slot)}
+                                                    className="ml-1.5 text-indigo-400 hover:text-red-500 transition"
+                                                    aria-label="Remove availability slot"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </span>
+                                    ))
+                            ) : (
+                                <p className="text-sm text-gray-400">
+                                    No availability added yet
+                                </p>
                             )}
                         </div>
                     </div>

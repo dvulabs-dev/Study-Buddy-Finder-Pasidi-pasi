@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
 
 const Profile = () => {
@@ -137,6 +138,7 @@ const Profile = () => {
         setProfile(data);
         setImagePreview(data.profileImage || '');
         setIsEditing(false);
+        toast.success('Profile updated successfully!');
 
         // Update AuthContext so header profile icon updates immediately
         if (updateUser && user) {
@@ -148,11 +150,11 @@ const Profile = () => {
       } else {
         const errorData = await response.json();
         console.error('Update failed:', errorData);
-        alert('Failed to save profile. Please try again.');
+        toast.error('Failed to save profile. Please try again.');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setSaving(false);
     }

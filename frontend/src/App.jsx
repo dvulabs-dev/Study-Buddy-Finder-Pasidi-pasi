@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { Toaster } from "react-hot-toast";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
@@ -10,11 +11,10 @@ import StudentSearch from "./components/StudentSearch";
 // import StudyGroupBrowser from "./components/StudyGroupBrowser";
 // import MyGroups from "./components/MyGroups";
 
-
-
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
