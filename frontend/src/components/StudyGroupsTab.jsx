@@ -197,14 +197,8 @@ const StudyGroupsTab = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        {/* Hero Section with Realistic Image */}
-        <div className="relative mb-8 overflow-hidden rounded-3xl h-[400px] group">
-          <img
-            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
-            alt="Students studying together"
-            className="absolute inset-0 object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-800/90 to-slate-900/80" />
+        {/* Hero Section with Gradient */}
+        <div className="relative mb-8 overflow-hidden rounded-3xl h-[400px] group" style={{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
           
           <div className="absolute inset-0 flex items-center px-8 lg:px-12">
             <div className="max-w-3xl">
