@@ -92,7 +92,7 @@ const FriendsTab = ({
                 {pendingRequests.map((r) => (
                   <div key={r._id} className="flex items-center justify-between p-4 border border-amber-200 bg-amber-50 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center text-sm font-bold text-white w-11 h-11 rounded-xl bg-amber-500 overflow-hidden">
+                      <div className="flex items-center justify-center overflow-hidden text-sm font-bold text-white w-11 h-11 rounded-xl bg-amber-500">
                         {r.from?.profileImage ? (
                           <img src={`http://localhost:5000${r.from.profileImage}`} alt={r.from?.name} className="object-cover w-full h-full" />
                         ) : (
@@ -130,7 +130,7 @@ const FriendsTab = ({
                 {sentRequestsList.map((r) => (
                   <div key={r._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center text-sm font-bold text-white bg-indigo-500 w-11 h-11 rounded-xl overflow-hidden">
+                      <div className="flex items-center justify-center overflow-hidden text-sm font-bold text-white bg-indigo-500 w-11 h-11 rounded-xl">
                         {r.to?.profileImage ? (
                           <img src={`http://localhost:5000${r.to.profileImage}`} alt={r.to?.name} className="object-cover w-full h-full" />
                         ) : (

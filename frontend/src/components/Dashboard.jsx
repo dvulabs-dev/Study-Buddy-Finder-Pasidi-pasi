@@ -1,5 +1,6 @@
 import { useContext, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import { AuthContext } from "../context/AuthContext";
 import {
   getAllStudyGroups,
@@ -77,7 +78,9 @@ const Dashboard = () => {
   const [sgSearchType, setSgSearchType] = useState("all");
   const [sgSubject, setSgSubject] = useState("");
   const [sgMeetingTime, setSgMeetingTime] = useState({
-    weekdays: false, weekend: false, morning: false, evening: false,
+    day: "",
+    startTime: "",
+    endTime: "",
   });
   const [sgGroups, setSgGroups] = useState([]);
   const [sgLoading, setSgLoading] = useState(false);
@@ -253,7 +256,19 @@ const Dashboard = () => {
   const sgAdvancedSearch = async (e) => {
     e.preventDefault();
     setSgLoading(true); setSgError("");
-    try { const d = await searchStudyGroupsByAvailability({ subject: sgSubject || undefined, meetingTime: sgMeetingTime }); setSgGroups(d.studyGroups); }
+    try {
+      const day = sgMeetingTime?.day || undefined;
+      const startTime = sgMeetingTime?.startTime || undefined;
+      const endTime = sgMeetingTime?.endTime || undefined;
+
+      const d = await searchStudyGroupsByAvailability({
+        subject: sgSubject || undefined,
+        day,
+        startTime,
+        endTime,
+      });
+      setSgGroups(d.studyGroups);
+    }
     catch (e) { setSgError(e.message || "Search failed"); }
     finally { setSgLoading(false); }
   };
@@ -262,7 +277,7 @@ const Dashboard = () => {
     setJoinLoading(id); setSgError("");
     try {
       await joinStudyGroup(id);
-      alert("Successfully joined the group!");
+      toast.success("Successfully joined the group!");
       sgLoadAll();
       fetchDashboardData();
     } catch (e) { setSgError(e.message || "Failed to join"); }
@@ -320,7 +335,7 @@ const Dashboard = () => {
     setMgError("");
     try {
       await updateStudyGroup(selectedGroup._id, formData);
-      alert("Updated!");
+      toast.success("Updated!");
       setShowEditModal(false);
       loadMyGroups();
       fetchDashboardData();
@@ -334,7 +349,7 @@ const Dashboard = () => {
   const mgDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     setMgActionLoading(id); setMgError("");
-    try { await deleteStudyGroup(id); alert("Deleted!"); loadMyGroups(); fetchDashboardData(); }
+    try { await deleteStudyGroup(id); toast.success("Deleted!"); loadMyGroups(); fetchDashboardData(); }
     catch (e) { setMgError(e.message || "Delete failed"); }
     finally { setMgActionLoading(null); }
   };
@@ -342,7 +357,7 @@ const Dashboard = () => {
   const mgLeave = async (id, name) => {
     if (!window.confirm(`Leave "${name}"?`)) return;
     setMgActionLoading(id); setMgError("");
-    try { await leaveStudyGroup(id); alert("Left group!"); loadMyGroups(); fetchDashboardData(); }
+    try { await leaveStudyGroup(id); toast.success("Left group!"); loadMyGroups(); fetchDashboardData(); }
     catch (e) { setMgError(e.message || "Leave failed"); }
     finally { setMgActionLoading(null); }
   };
@@ -368,9 +383,9 @@ const Dashboard = () => {
     setInviteSending(friendId);
     try {
       await sendGroupInvite(inviteGroupId, friendId);
-      alert("Invite sent!");
+      toast.success("Invite sent!");
       setInviteFriends((prev) => prev.filter((f) => f._id !== friendId));
-    } catch (e) { alert(e.message || "Failed to send invite"); }
+    } catch (e) { toast.error(e.message || "Failed to send invite"); }
     finally { setInviteSending(null); }
   };
 
@@ -427,7 +442,7 @@ const Dashboard = () => {
     try {
       await sendFriendReq(userId);
       setFriendStatusMap((prev) => ({ ...prev, [userId]: { status: "pending", direction: "sent" } }));
-    } catch (e) { alert(e.message || "Failed to send request"); }
+    } catch (e) { toast.error(e.message || "Failed to send request"); }
     finally { setFrActionLoading(null); }
   };
 
@@ -448,6 +463,11 @@ const Dashboard = () => {
     } catch (e) { setFriendsError(e.message || "Failed to load"); }
     finally { setFriendsLoading(false); }
   }, []);
+
+  // Load friends once so dashboard can filter out existing friends
+  useEffect(() => {
+    if (user) loadFriendsData();
+  }, [user, loadFriendsData]);
 
   useEffect(() => { if (activeTab === "friends") loadFriendsData(); }, [activeTab, loadFriendsData]);
 
@@ -475,7 +495,7 @@ const Dashboard = () => {
 
   const handleAcceptGroupInvite = async (inviteId) => {
     setFriendActionLoading(inviteId);
-    try { await acceptGroupInvite(inviteId); alert("You joined the group!"); loadFriendsData(); fetchDashboardData(); }
+    try { await acceptGroupInvite(inviteId); toast.success("You joined the group!"); loadFriendsData(); fetchDashboardData(); }
     catch (e) { setFriendsError(e.message || "Failed"); }
     finally { setFriendActionLoading(null); }
   };
@@ -556,6 +576,7 @@ const Dashboard = () => {
         myGroupsList={myGroupsList}
         studyGroups={studyGroups}
         suggestedBuddies={suggestedBuddies}
+        friendStatusMap={friendStatusMap}
         pendingRequests={pendingRequests}
         groupInvitesList={groupInvitesList}
         friendActionLoading={friendActionLoading}
@@ -714,7 +735,7 @@ const Dashboard = () => {
   // ════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
-      <div className="flex min-h-screen">
+      <div className="min-h-screen">
         {/* ─── Sidebar ─── */}
         <Sidebar
           user={user}
@@ -733,7 +754,7 @@ const Dashboard = () => {
         />
 
         {/* ─── Main Content ─── */}
-        <div className={`flex-1 transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'}`}>
+        <div className={`transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'}`}>
           {/* Top Bar */}
           <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
             <div className="flex items-center justify-between px-6 py-4 lg:px-8">
@@ -747,7 +768,13 @@ const Dashboard = () => {
           </div>
 
           {/* Page content */}
-          <div className="p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-10">
+          <div
+            className={
+              activeTab === 'studygroups'
+                ? 'pb-24 sm:pb-24 lg:pb-10'
+                : 'p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8 lg:pb-10'
+            }
+          >
             {tabContent[activeTab]()}
           </div>
         </div>

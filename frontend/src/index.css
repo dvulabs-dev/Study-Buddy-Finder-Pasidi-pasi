@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  @keyframes sb-marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .sb-marquee-track {
+    width: max-content;
+    animation: sb-marquee 38s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-marquee-track {
+    animation: none;
+    transform: none;
+  }
+}
+
 /* Enhanced Time Input Styling */
 @layer components {
   /* Custom time input styling */

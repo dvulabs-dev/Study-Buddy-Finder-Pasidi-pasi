@@ -36,6 +36,7 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [currentStep, setCurrentStep] = useState(1); // Step tracker
   const [openTimePicker, setOpenTimePicker] = useState({ index: null, type: null }); // Track which time picker is open
+  const [pendingSlotTime, setPendingSlotTime] = useState("");
 
   // Don't render if modal is closed
   if (!isOpen) {
@@ -265,6 +266,12 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
     return Object.keys(nextErrors).length === 0;
   };
 
+  const validateAllSteps = () => {
+    const nextErrors = validate(formData);
+    setErrors(nextErrors);
+    return nextErrors;
+  };
+
   // Navigation functions
   const handleNext = (e) => {
     if (e) {
@@ -279,6 +286,8 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
       isValid = validateStep1();
     } else if (currentStep === 2) {
       isValid = validateStep2();
+    } else if (currentStep === 3) {
+      isValid = validateStep3();
     }
     
     if (isValid) {
@@ -300,10 +309,22 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Only allow submission on Step 3
-    if (currentStep !== 3) {
-      // If user pressed Enter, treat it as Next button
+    // Only allow submission on Summary step (Step 4)
+    if (currentStep !== 4) {
       handleNext();
+      return;
+    }
+
+    const nextErrors = validateAllSteps();
+    if (Object.keys(nextErrors).length > 0) {
+      setFormError("Please enter all required data before creating the group.");
+      if (!formData.name?.trim() || !formData.subject?.trim() || nextErrors?.maxMembers) {
+        setCurrentStep(1);
+      } else if (!hallAllocation.building || !hallAllocation.floor || !hallAllocation.lab) {
+        setCurrentStep(2);
+      } else {
+        setCurrentStep(3);
+      }
       return;
     }
 
@@ -391,6 +412,13 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
     setFormError("");
     setCurrentStep(1); // Reset to step 1
     onClose();
+  };
+
+  const applyPendingSlotTime = () => {
+    if (openTimePicker.index === null || !openTimePicker.type) return;
+    const field = openTimePicker.type === "start" ? "startTime" : "endTime";
+    handleTimeSlotChange(openTimePicker.index, field, pendingSlotTime);
+    setOpenTimePicker({ index: null, type: null });
   };
 
   // Handle image file upload
@@ -541,6 +569,24 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                   <div className="ml-2">
                     <div className="text-xs font-semibold text-gray-700">Step 3</div>
                     <div className="text-xs text-gray-500">Meeting Times</div>
+                  </div>
+                </div>
+
+                {/* Connector */}
+                <div className={`flex-1 h-1 mx-2 ${
+                  currentStep > 3 ? 'bg-indigo-600' : 'bg-gray-200'
+                }`}></div>
+
+                {/* Step 4 */}
+                <div className="flex items-center flex-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                    currentStep >= 4 ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    4
+                  </div>
+                  <div className="ml-2">
+                    <div className="text-xs font-semibold text-gray-700">Step 4</div>
+                    <div className="text-xs text-gray-500">Summary</div>
                   </div>
                 </div>
               </div>
@@ -838,7 +884,10 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                         </label>
                         <button
                           type="button"
-                          onClick={() => setOpenTimePicker({ index, type: 'start' })}
+                          onClick={() => {
+                            setPendingSlotTime(slot.startTime || "09:00");
+                            setOpenTimePicker({ index, type: 'start' });
+                          }}
                           disabled={loading}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed text-left bg-white"
                         >
@@ -854,15 +903,32 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                               >
                                 ×
                               </button>
+                              <div className="px-4 pt-4">
+                                <p className="text-sm font-medium text-gray-900">Selected</p>
+                                <p className="text-sm text-gray-600">{pendingSlotTime ? formatTimeForDisplay(pendingSlotTime) : "—"}</p>
+                              </div>
                               <StaticTimePickerLandscape
-                                value={slot.startTime}
-                                onChange={(newTime) => {
-                                  handleTimeSlotChange(index, "startTime", newTime);
-                                  setOpenTimePicker({ index: null, type: null });
-                                }}
+                                value={pendingSlotTime || slot.startTime || "09:00"}
+                                onChange={(newTime) => setPendingSlotTime(newTime)}
                                 disabled={loading}
                                 label="Select Start Time"
                               />
+                              <div className="px-4 pb-4 flex gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={applyPendingSlotTime}
+                                  className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+                                >
+                                  Done
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -875,7 +941,10 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                         </label>
                         <button
                           type="button"
-                          onClick={() => setOpenTimePicker({ index, type: 'end' })}
+                          onClick={() => {
+                            setPendingSlotTime(slot.endTime || "11:00");
+                            setOpenTimePicker({ index, type: 'end' });
+                          }}
                           disabled={loading}
                           className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-base font-medium text-gray-700 hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed text-left bg-white"
                         >
@@ -891,15 +960,32 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                               >
                                 ×
                               </button>
+                              <div className="px-4 pt-4">
+                                <p className="text-sm font-medium text-gray-900">Selected</p>
+                                <p className="text-sm text-gray-600">{pendingSlotTime ? formatTimeForDisplay(pendingSlotTime) : "—"}</p>
+                              </div>
                               <StaticTimePickerLandscape
-                                value={slot.endTime}
-                                onChange={(newTime) => {
-                                  handleTimeSlotChange(index, "endTime", newTime);
-                                  setOpenTimePicker({ index: null, type: null });
-                                }}
+                                value={pendingSlotTime || slot.endTime || "11:00"}
+                                onChange={(newTime) => setPendingSlotTime(newTime)}
                                 disabled={loading}
                                 label="Select End Time"
                               />
+                              <div className="px-4 pb-4 flex gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenTimePicker({ index: null, type: null })}
+                                  className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={applyPendingSlotTime}
+                                  className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+                                >
+                                  Done
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -938,6 +1024,63 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
             )}
 
+            {/* Step 4: Summary */}
+            {currentStep === 4 && (
+              <div className="space-y-5">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-sm font-semibold text-gray-900">Review & Confirm</p>
+                  <p className="text-sm text-gray-600">Please check your details. If something is missing, go back and enter all data.</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <p className="text-sm font-semibold text-gray-900">Basic Info</p>
+                    <div className="mt-2 space-y-1 text-sm text-gray-700">
+                      <p><span className="font-medium">Group Name:</span> {formData.name || "—"}</p>
+                      <p><span className="font-medium">Subject:</span> {formData.subject || "—"}</p>
+                      <p><span className="font-medium">Max Members:</span> {formData.maxMembers || "—"}</p>
+                      <p className="text-gray-600"><span className="font-medium text-gray-700">Description:</span> {formData.description?.trim() ? formData.description : "—"}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <p className="text-sm font-semibold text-gray-900">Hall & Image</p>
+                    <div className="mt-2 space-y-1 text-sm text-gray-700">
+                      <p><span className="font-medium">Building:</span> {hallAllocation.building || "—"}</p>
+                      <p><span className="font-medium">Floor:</span> {hallAllocation.floor || "—"}</p>
+                      <p><span className="font-medium">Lab:</span> {hallAllocation.lab || "—"}</p>
+                      <p><span className="font-medium">Image:</span> {imageFile ? "Uploaded file" : imageUrl ? "URL" : "Default"}</p>
+                    </div>
+                    {imagePreview && (
+                      <img
+                        src={imagePreview}
+                        alt="Group preview"
+                        className="mt-3 h-24 w-full rounded-lg border border-gray-200 object-cover"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="text-sm font-semibold text-gray-900">Meeting Times</p>
+                  {meetingTimeSlots?.length ? (
+                    <div className="mt-2 space-y-2">
+                      {meetingTimeSlots.map((slot, idx) => (
+                        <div key={idx} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                          <span className="font-medium">{slot.day || "—"}</span>
+                          <span className="text-gray-600">
+                            {slot.startTime ? formatTimeForDisplay(slot.startTime) : "—"} – {slot.endTime ? formatTimeForDisplay(slot.endTime) : "—"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-600">—</p>
+                  )}
+                </div>
+              </div>
+            )}
+
           {/* Form Error */}
           {formError && (
             <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-center gap-2">
@@ -973,16 +1116,13 @@ const CreateGroupModal = ({ isOpen, onClose, onSuccess }) => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  if (currentStep === 3) {
-                    handleSubmit(e);
-                  } else {
-                    handleNext(e);
-                  }
+                  if (currentStep === 4) return handleSubmit(e);
+                  return handleNext(e);
                 }}
-                disabled={loading || (currentStep === 3 && meetingTimeSlots.length === 0)}
+                disabled={loading || (currentStep === 4 && meetingTimeSlots.length === 0)}
                 className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
               >
-                {loading ? "Creating..." : (currentStep === 3 ? "Create Group" : "Next")}
+                {loading ? "Creating..." : (currentStep === 4 ? "Create Group" : "Next")}
               </button>
             </div>
           </form>

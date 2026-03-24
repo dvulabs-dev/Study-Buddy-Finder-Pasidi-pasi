@@ -21,6 +21,46 @@ const FindBuddiesTab = ({
 }) => {
   const [openTimePicker, setOpenTimePicker] = useState({ type: null }); // Track which time picker is open
 
+  const normalizeAvailabilitySlot = (slot) => {
+    if (!slot) return null;
+    if (typeof slot === "string") return { day: slot, startTime: "", endTime: "" };
+
+    const day =
+      slot.day ??
+      slot.weekday ??
+      slot.dayOfWeek ??
+      slot.dayName ??
+      slot.day_name ??
+      slot.day_of_week;
+    if (typeof day !== "string" || day.trim() === "") return null;
+
+    const startTime =
+      slot.startTime ??
+      slot.start ??
+      slot.from ??
+      slot.start_time ??
+      slot.start_time_str;
+    const endTime =
+      slot.endTime ??
+      slot.end ??
+      slot.to ??
+      slot.end_time ??
+      slot.end_time_str;
+
+    return {
+      day: day.trim(),
+      startTime: typeof startTime === "string" ? startTime : "",
+      endTime: typeof endTime === "string" ? endTime : "",
+    };
+  };
+
+  const formatTimeRange = (startTime, endTime) => {
+    if (startTime && endTime) return `${startTime}-${endTime}`;
+    if (startTime) return startTime;
+    if (endTime) return endTime;
+    return "";
+  };
+
   return (
     <div className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
       <h2 className="mb-6 text-2xl font-bold text-gray-900">Find Study Buddies</h2>
@@ -44,10 +84,10 @@ const FindBuddiesTab = ({
           <div><label className="block mb-2 text-sm font-medium text-gray-700">Subject</label><input type="text" placeholder="Enter subject" value={fbSubject} onChange={(e) => setFbSubject(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" /></div>
           <div>
             <label className="block mb-2 text-sm font-medium text-gray-700">Availability</label>
-            <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <div className="p-4 space-y-3 border border-gray-200 rounded-lg bg-gray-50">
               {/* Days Selection */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Days</label>
+                <label className="block mb-2 text-xs font-semibold text-gray-600 uppercase">Days</label>
                 <div className="grid grid-cols-2 gap-3">
                   {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
                     <label key={day} className="flex items-center space-x-2 cursor-pointer">
@@ -59,14 +99,14 @@ const FindBuddiesTab = ({
               </div>
               {/* Time Selection */}
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">Time Range</label>
+                <label className="block mb-2 text-xs font-semibold text-gray-600 uppercase">Time Range</label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-700 mb-1">Start Time</label>
+                    <label className="block mb-1 text-xs text-gray-700">Start Time</label>
                     <button
                       type="button"
                       onClick={() => setOpenTimePicker({ type: 'start' })}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                      className="w-full px-3 py-2 text-sm font-medium text-left text-gray-700 transition-all duration-200 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-indigo-400"
                     >
                       {fbAvailableTime.startTime || "Select Start Time"}
                     </button>
@@ -76,7 +116,7 @@ const FindBuddiesTab = ({
                           <button
                             type="button"
                             onClick={() => setOpenTimePicker({ type: null })}
-                            className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                            className="absolute z-10 flex items-center justify-center w-8 h-8 text-2xl text-gray-500 bg-white rounded-full shadow-md top-2 right-2 hover:text-gray-700"
                           >
                             ×
                           </button>
@@ -93,11 +133,11 @@ const FindBuddiesTab = ({
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-700 mb-1">End Time</label>
+                    <label className="block mb-1 text-xs text-gray-700">End Time</label>
                     <button
                       type="button"
                       onClick={() => setOpenTimePicker({ type: 'end' })}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 font-medium text-gray-700 hover:border-indigo-400 text-left bg-white"
+                      className="w-full px-3 py-2 text-sm font-medium text-left text-gray-700 transition-all duration-200 bg-white border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:border-indigo-400"
                     >
                       {fbAvailableTime.endTime || "Select End Time"}
                     </button>
@@ -107,7 +147,7 @@ const FindBuddiesTab = ({
                           <button
                             type="button"
                             onClick={() => setOpenTimePicker({ type: null })}
-                            className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
+                            className="absolute z-10 flex items-center justify-center w-8 h-8 text-2xl text-gray-500 bg-white rounded-full shadow-md top-2 right-2 hover:text-gray-700"
                           >
                             ×
                           </button>
@@ -155,9 +195,27 @@ const FindBuddiesTab = ({
                       <p className="text-sm text-gray-500">{s.email}</p>
                       {s.degree && <p className="text-sm text-gray-500">{s.degree}{s.year && ` - Year ${s.year}`}</p>}
                       {s.subjects?.length > 0 && <div className="flex flex-wrap gap-1 mt-2">{s.subjects.map((sub, i) => <span key={i} className="px-2 py-0.5 text-xs text-indigo-700 bg-indigo-100 rounded-full">{sub}</span>)}</div>}
-                      {s.availableTime && s.availableTime.length > 0 && <div className="flex flex-wrap gap-1.5 mt-2 text-xs text-gray-600">
-                        {s.availableTime.map((slot, i) => <span key={i} className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-full">{slot.day} {slot.startTime}-{slot.endTime}</span>)}
-                      </div>}
+                      {s.availableTime && s.availableTime.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2 text-xs text-gray-600">
+                          {(() => {
+                            const slots = (s.availableTime ?? [])
+                              .map(normalizeAvailabilitySlot)
+                              .filter(Boolean);
+
+                            return slots.map((slot, i) => {
+                              const timeRange = formatTimeRange(slot.startTime, slot.endTime);
+                              return (
+                                <span
+                                  key={`${slot.day}-${slot.startTime}-${slot.endTime}-${i}`}
+                                  className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-full"
+                                >
+                                  {slot.day}{timeRange ? ` ${timeRange}` : ""}
+                                </span>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex-shrink-0 ml-3">

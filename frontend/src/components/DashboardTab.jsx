@@ -1,27 +1,32 @@
 import React from 'react'
+import { FlipWords } from '../ui/flip-words'
+import { DirectionAwareHover } from '../ui/direction-aware-hover'
 import {
   Users as UsersIcon,
   Search as SearchIcon,
   BookOpen as BookOpenIcon,
   GraduationCap as GraduationCapIcon,
   User as UserIcon,
+  Mail as MailIcon,
   ChevronRight as ChevronRightIcon,
   AlertCircle as AlertCircleIcon,
   Bell as BellIcon,
   Check as CheckIcon,
   X as XIcon,
   SquarePen as PenSquareIcon,
-  MapPin as MapPinIcon,
   Loader2 as Loader2Icon,
 } from 'lucide-react'
 
 const API_BASE = "http://localhost:5000";
+const DEFAULT_GROUP_IMAGE = "/image.png";
 
 const getGroupImage = (img) => {
   if (!img) return null;
   if (img.startsWith('http')) return img;
   return `${API_BASE}${img}`;
 };
+
+const getGroupImageSrc = (img) => getGroupImage(img) || DEFAULT_GROUP_IMAGE;
 
 
 export const DashboardTab = ({
@@ -32,6 +37,7 @@ export const DashboardTab = ({
   myGroupsList,
   studyGroups,
   suggestedBuddies,
+  friendStatusMap,
   pendingRequests,
   groupInvitesList,
   friendActionLoading,
@@ -62,6 +68,24 @@ export const DashboardTab = ({
     day: 'numeric',
   })
   const hasSharedGroupSuggestions = suggestedBuddies?.some((b) => b.sharedGroups && b.sharedGroups.length > 0)
+
+  const availabilitySlots = (user?.availableTime ?? []).filter(
+    (s) => s && typeof s === 'object' && s.day && s.startTime && s.endTime
+  )
+
+  const friendIdSet = new Set(
+    (myFriendsList ?? []).map((f) => ((f?._id || f?.id || f?.userId || f?.user?._id || f?.user?.id) ?? "").toString())
+  )
+  const nonFriendSuggestions = (suggestedBuddies ?? []).filter((b) => {
+    const buddyId = ((b?._id || b?.id) ?? "").toString()
+    if (!buddyId) return false
+    if (friendIdSet.has(buddyId)) return false
+    const relStatus = friendStatusMap?.[buddyId]?.status
+    if (relStatus === 'accepted' || relStatus === 'pending') return false
+    return true
+  })
+
+  const flipWords = ['better', 'cute', 'beautiful', 'modern']
   return (
     <div className="space-y-8">
       {dashError && (
@@ -72,15 +96,47 @@ export const DashboardTab = ({
       )}
 
       {/* 1. Welcome Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/50 border border-indigo-100 rounded-3xl p-8 lg:p-10 shadow-sm">
+      <div className="relative p-8 overflow-hidden bg-white border border-indigo-100 shadow-sm rounded-3xl lg:p-10">
+        <img
+          src="/SLIIT-malabe.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 z-0 w-full h-full object-cover blur-[1px] scale-105"
+          loading="lazy"
+          draggable={false}
+        />
+        {/* Softer background + stronger blur behind text area (linear fade) */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0 bg-white/25" />
+          <div
+            className="absolute inset-y-0 left-0 w-full sm:w-2/3 lg:w-1/2 bg-white/55 backdrop-blur-xl"
+            style={{
+              WebkitMaskImage:
+                'linear-gradient(to right, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+              maskImage:
+                'linear-gradient(to right, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+            }}
+          />
+        </div>
+
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-block px-3 py-1 mb-4 text-xs font-semibold text-indigo-700 bg-indigo-100/80 rounded-full">
+          <div className="inline-block px-3 py-1 mb-4 text-xs font-semibold text-indigo-700 rounded-full bg-indigo-100/80">
             {currentDate}
           </div>
-          <h1 className="mb-3 text-3xl font-bold text-gray-900 lg:text-4xl tracking-tight">
+          <h1 className="mb-3 text-3xl font-bold tracking-tight text-gray-900 lg:text-4xl">
             {greeting}, {user?.name?.split(' ')[0] || 'Student'}!
           </h1>
-          <p className="mb-8 text-lg text-gray-600 leading-relaxed">
+
+          <div className="mb-4 text-xl leading-snug text-gray-700 group">
+            Build
+            <FlipWords
+              words={flipWords}
+              className="group-hover:text-indigo-800"
+            />
+            study sessions with Study Buddy
+          </div>
+
+          <p className="mb-8 text-lg leading-relaxed text-gray-600">
             Ready for another productive day? You have{' '}
             <span className="font-semibold text-indigo-600">
               {myGroupsList.length} active groups
@@ -109,8 +165,33 @@ export const DashboardTab = ({
           </div>
         </div>
         {/* Decorative background elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-200/40 to-violet-200/40 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-        <div className="absolute bottom-0 right-40 w-48 h-48 bg-gradient-to-br from-sky-200/40 to-indigo-200/40 rounded-full blur-3xl -mb-20 pointer-events-none" />
+        <div className="absolute top-0 right-0 z-0 w-64 h-64 -mt-20 -mr-20 rounded-full pointer-events-none bg-gradient-to-br from-indigo-200/40 to-violet-200/40 blur-3xl" />
+        <div className="absolute bottom-0 z-0 w-48 h-48 -mb-20 rounded-full pointer-events-none right-40 bg-gradient-to-br from-sky-200/40 to-indigo-200/40 blur-3xl" />
+      </div>
+
+      {/* Scrolling Image */}
+      <div className="overflow-hidden bg-white border shadow-sm border-gray-200/80 rounded-3xl">
+        <div className="relative w-full">
+          <div className="flex items-center gap-10 py-4 sb-marquee-track">
+            {(() => {
+              const logos = ['/william.png', '/image.png']
+              const base = Array.from({ length: 8 }).flatMap(() => logos)
+              const track = [...base, ...base]
+
+              return track.map((src, i) => (
+                <img
+                  key={`${src}-${i}`}
+                  src={src}
+                  alt=""
+                  aria-hidden="true"
+                  className="object-contain w-auto pointer-events-none select-none h-14 sm:h-16"
+                  loading="lazy"
+                  draggable={false}
+                />
+              ))
+            })()}
+          </div>
+        </div>
       </div>
 
       {/* 2. Stats Row */}
@@ -141,39 +222,58 @@ export const DashboardTab = ({
             color: 'emerald',
           },
         ].map((stat, i) => {
-          const colorStyles = {
-            indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-            violet: 'bg-violet-50 text-violet-600 border-violet-100',
-            sky: 'bg-sky-50 text-sky-600 border-sky-100',
-            emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+          const tintStyles = {
+            indigo: 'from-indigo-900/70 via-indigo-600/25',
+            violet: 'from-violet-900/70 via-violet-600/25',
+            sky: 'from-sky-900/70 via-sky-600/25',
+            emerald: 'from-emerald-900/70 via-emerald-600/25',
           }
           return (
-            <div
+            <DirectionAwareHover
               key={i}
-              className="p-5 bg-white border border-gray-200/80 rounded-2xl shadow-sm"
+              imageUrl="/SLIIT-malabe.jpg"
+              tintClassName={tintStyles[stat.color]}
+              className="h-28 sm:h-32"
+              staticContent={
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold tracking-wide text-gray-600 uppercase truncate">
+                      {stat.label}
+                    </p>
+                    <p className="mt-1.5 text-3xl font-extrabold text-gray-900 tabular-nums">
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-gray-900 border border-gray-200 rounded-xl bg-white/80">
+                    <stat.icon className="w-5 h-5" />
+                  </div>
+                </div>
+              }
             >
-              <div
-                className={`p-2.5 rounded-xl w-fit mb-4 border ${colorStyles[stat.color]}`}
-              >
-                <stat.icon className="w-5 h-5" />
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold tracking-wide text-white/90 uppercase truncate">
+                    {stat.label}
+                  </p>
+                  <p className="mt-1 text-3xl font-extrabold text-white tabular-nums">
+                    {stat.value}
+                  </p>
+                </div>
+                <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 border rounded-xl border-white/20 bg-white/10">
+                  <stat.icon className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900 mb-1">
-                {stat.value}
-              </p>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                {stat.label}
-              </p>
-            </div>
+            </DirectionAwareHover>
           )
         })}
       </div>
 
       {/* 3. Two-column row: Profile Card + Suggested Buddies */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 w-full">
+      <div className="grid items-start w-full grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Profile Card */}
         <div className="w-full">
-          <div className="bg-white border border-gray-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
-          <div className="h-20 bg-gradient-to-r from-indigo-500 to-violet-600 relative">
+          <div className="flex flex-col overflow-hidden bg-white border shadow-sm border-gray-200/80 rounded-2xl">
+          <div className="relative h-20 bg-gradient-to-r from-indigo-500 to-violet-600">
             <button
               onClick={openProfileEdit}
               className="absolute top-3 right-3 p-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg backdrop-blur-sm transition-colors"
@@ -182,11 +282,11 @@ export const DashboardTab = ({
               <PenSquareIcon className="w-3 h-3" />
             </button>
           </div>
-          <div className="px-4 pb-4 flex-1 flex flex-col items-center text-center -mt-10 relative z-10">
-            <div className="w-20 h-20 bg-white rounded-full p-1 mb-3 shadow-sm">
-              <div className="w-full h-full bg-gradient-to-br from-indigo-100 to-violet-100 rounded-full flex items-center justify-center text-2xl font-bold text-indigo-600 border border-indigo-200/50 overflow-hidden">
+          <div className="relative z-10 flex flex-col items-center px-4 pb-4 -mt-10 text-center">
+            <div className="w-20 h-20 p-1 mb-3 bg-white rounded-full shadow-sm">
+              <div className="flex items-center justify-center w-full h-full overflow-hidden text-2xl font-bold text-indigo-600 border rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 border-indigo-200/50">
                 {user?.profileImage ? (
-                  <img src={`${API_BASE}${user.profileImage}`} alt={user?.name} className="w-full h-full object-cover" />
+                  <img src={`${API_BASE}${user.profileImage}`} alt={user?.name} className="object-cover w-full h-full" />
                 ) : (
                   getInitials(user?.name)
                 )}
@@ -195,15 +295,50 @@ export const DashboardTab = ({
             <h3 className="text-lg font-bold text-gray-900 mb-0.5">
               {user?.name || 'Student'}
             </h3>
-            <p className="text-xs font-medium text-indigo-600 mb-1">
+            <p className="mb-1 text-xs font-medium text-indigo-600">
               {user?.degree || 'Degree Program'}
             </p>
-            <div className="flex items-center text-[10px] text-gray-500 mb-4">
-              <MapPinIcon className="w-3 h-3 mr-0.5" />
-              {user?.university || 'University'}
+            <div className="flex items-center justify-center gap-4 mb-3 text-[10px] text-gray-500">
+              <span className="inline-flex items-center">
+                <MailIcon className="w-3 h-3 mr-1" />
+                {user?.email || '—'}
+              </span>
+              <span className="inline-flex items-center">
+                <span className="font-semibold text-gray-700">Year</span>
+                <span className="ml-1">{user?.year || '—'}</span>
+              </span>
             </div>
 
-            <div className="w-full grid grid-cols-3 gap-1 pt-4 border-t border-gray-100 mt-auto">
+            <div className="w-full mb-4">
+              <div className="flex flex-wrap justify-center gap-2">
+                {(user?.subjects || []).slice(0, 3).map((s, idx) => (
+                  <span
+                    key={`sub-${idx}-${s}`}
+                    className="inline-flex items-center px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 rounded-full"
+                    title={s}
+                  >
+                    {s}
+                  </span>
+                ))}
+                {availabilitySlots.slice(0, 2).map((slot, idx) => (
+                  <span
+                    key={`av-${idx}-${slot.day}-${slot.startTime}-${slot.endTime}`}
+                    className="inline-flex items-center px-2.5 py-1 text-[11px] font-semibold text-violet-700 bg-violet-50 rounded-full"
+                    title={`${slot.day}: ${slot.startTime} - ${slot.endTime}`}
+                  >
+                    {slot.day} • {slot.startTime}-{slot.endTime}
+                  </span>
+                ))}
+              </div>
+
+              {(user?.subjects?.length ?? 0) === 0 && availabilitySlots.length === 0 && (
+                <p className="mt-3 text-[11px] text-gray-500">
+                  Add subjects and availability in Profile to get better buddy and group suggestions.
+                </p>
+              )}
+            </div>
+
+            <div className="grid w-full grid-cols-3 gap-1 pt-4 border-t border-gray-100">
               <div className="text-center">
                 <p className="text-base font-bold text-gray-900">
                   {myGroupsList.length}
@@ -212,7 +347,7 @@ export const DashboardTab = ({
                   Groups
                 </p>
               </div>
-              <div className="text-center border-x border-gray-100">
+              <div className="text-center border-gray-100 border-x">
                 <p className="text-lg font-bold text-gray-900">
                   {myFriendsList?.length || 0}
                 </p>
@@ -235,96 +370,113 @@ export const DashboardTab = ({
 
         {/* Suggested Buddies */}
         <div className="w-full">
-          <div className="rounded-2xl shadow-sm overflow-hidden flex flex-col h-full" style={{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            <div className="p-4 relative z-10 flex flex-col h-full">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-bold text-white">
-                  Suggested Buddies
-                </h3>
-                <p className="text-xs text-white/80">
-                  {hasSharedGroupSuggestions
-                    ? 'Classmates from your study groups'
-                    : 'People who share your interests'}
-                </p>
-              </div>
-              <button
-                onClick={() => setActiveTab('findbuddies')}
-                className="text-xs font-medium text-white hover:text-white/80"
-              >
-                Find more
-              </button>
+          <div className="relative flex flex-col overflow-hidden shadow-sm rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-sky-400">
+            {/* Dotted corner accents */}
+            <div className="absolute top-6 left-6 grid grid-cols-4 gap-1.5 opacity-60 pointer-events-none">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <span key={`tl-${i}`} className="w-1.5 h-1.5 bg-white/35 rounded-full" />
+              ))}
+            </div>
+            <div className="absolute bottom-6 right-6 grid grid-cols-4 gap-1.5 opacity-60 pointer-events-none">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <span key={`br-${i}`} className="w-1.5 h-1.5 bg-white/35 rounded-full" />
+              ))}
             </div>
 
-            {suggestedBuddies.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-4 text-center">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-2 shadow-sm">
-                  <UserIcon className="w-5 h-5 text-white/70" />
-                </div>
-                <p className="text-xs font-medium text-white mb-0.5">
-                  No suggestions yet
-                </p>
-                <p className="text-[10px] text-white/70">
-                  Join or create study groups to discover new buddies.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2 flex-1">
-                {suggestedBuddies.slice(0, 4).map((buddy) => (
-                  <div
-                    key={buddy._id}
-                    className="flex items-center justify-between p-2 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm hover:border-white/40 hover:bg-white/15 transition-colors"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center text-xs font-bold text-indigo-700 flex-shrink-0 overflow-hidden">
-                        {buddy.profileImage ? (
-                          <img src={`${API_BASE}${buddy.profileImage}`} alt={buddy.name} className="w-full h-full object-cover" />
-                        ) : (
-                          getInitials(buddy.name)
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">
-                          {buddy.name}
-                        </p>
-                        {buddy.sharedGroups && buddy.sharedGroups.length > 0 ? (
-                          <p className="text-[9px] text-white/70 truncate">
-                            Shared groups: {buddy.sharedGroups.slice(0, 2).map((g) => g.name).join(', ')}
-                            {buddy.sharedGroups.length > 2 && ' +' + (buddy.sharedGroups.length - 2)}
-                          </p>
-                        ) : (
-                          <p className="text-[9px] text-white/70 truncate">
-                            {buddy.degree || buddy.subjects?.slice(0, 2).join(', ')}
-                          </p>
-                        )}
-                      </div>
+            <div className="relative z-10 p-4">
+              <div className="w-full border shadow-xl bg-white/95 backdrop-blur-sm border-white/70 rounded-2xl">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        People you may know
+                      </h3>
+                      <p className="text-[11px] text-gray-500">
+                        {hasSharedGroupSuggestions
+                          ? 'Based on your study groups'
+                          : 'Based on your interests'}
+                      </p>
                     </div>
-                    <div className="ml-2 flex-shrink-0">
-                      {renderFriendButton
-                        ? renderFriendButton(buddy._id)
-                        : (
-                          <button
-                            onClick={() => setActiveTab('findbuddies')}
-                            className="px-2 py-1 text-[10px] font-medium text-indigo-700 bg-white/90 rounded-md hover:bg-white transition-colors"
-                          >
-                            Connect
-                          </button>
-                        )}
-                    </div>
+                    <button
+                      onClick={() => setActiveTab('findbuddies')}
+                      className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      Find more
+                    </button>
                   </div>
-                ))}
+
+                  {nonFriendSuggestions.length === 0 ? (
+                    <div className="py-6 text-center">
+                      <p className="text-sm font-medium text-gray-700">
+                        No suggestions yet
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Join or create study groups to discover new buddies.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {nonFriendSuggestions.slice(0, 4).map((buddy) => (
+                        <div
+                          key={buddy._id || buddy.id}
+                          className="flex items-center justify-between py-2.5"
+                        >
+                          <div className="flex items-center min-w-0 gap-3">
+                            <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 overflow-hidden text-sm font-bold text-indigo-700 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100">
+                              {buddy.profileImage ? (
+                                <img
+                                  src={`${API_BASE}${buddy.profileImage}`}
+                                  alt={buddy.name}
+                                  className="object-cover w-full h-full"
+                                />
+                              ) : (
+                                getInitials(buddy.name)
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">
+                                {buddy.name}
+                              </p>
+                              {buddy.sharedGroups && buddy.sharedGroups.length > 0 ? (
+                                <p className="text-xs text-gray-500 truncate">
+                                  {buddy.sharedGroups.length} shared group{buddy.sharedGroups.length !== 1 ? 's' : ''}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-gray-500 truncate">
+                                  {buddy.degree || buddy.subjects?.slice(0, 2).join(', ') || 'Student'}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex-shrink-0 ml-3">
+                            {renderFriendButton
+                              ? renderFriendButton(buddy._id || buddy.id)
+                              : (
+                                <button
+                                  onClick={() => setActiveTab('findbuddies')}
+                                  className="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                                >
+                                  Add Friend
+                                </button>
+                              )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
             </div>
           </div>
         </div>
       </div>
 
       {/* 4. My Study Groups */}
-      <div className="bg-white border border-gray-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+      <div className="flex flex-col overflow-hidden bg-white border shadow-sm border-gray-200/80 rounded-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 rounded-lg">
+            <div className="p-2 rounded-lg bg-indigo-50">
               <BookOpenIcon className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
@@ -340,11 +492,11 @@ export const DashboardTab = ({
 
         <div className="p-6">
           {myGroupsList.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="py-8 text-center">
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-gray-50">
                 <UsersIcon className="w-8 h-8 text-gray-400" />
               </div>
-              <p className="text-sm font-medium text-gray-900 mb-1">
+              <p className="mb-1 text-sm font-medium text-gray-900">
                 You haven't joined any groups yet
               </p>
               <button
@@ -355,7 +507,7 @@ export const DashboardTab = ({
               </button>
             </div>
           ) : (
-            <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+            <div className="flex gap-5 pb-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
               {myGroupsList.slice(0, 4).map((group) => {
                 const memberCount = group.members?.length || 0
                 const maxMembers = group.maxMembers || 10
@@ -364,30 +516,36 @@ export const DashboardTab = ({
                 return (
                   <div
                     key={group._id}
-                    className="flex-shrink-0 w-64 bg-white border border-gray-200/80 rounded-xl overflow-hidden flex flex-col hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
+                    className="flex flex-col flex-shrink-0 w-64 overflow-hidden transition-all bg-white border cursor-pointer border-gray-200/80 rounded-xl hover:border-indigo-200 hover:shadow-md"
                     onClick={() => setActiveTab('studygroups')}
                   >
                     <div className="h-1.5 bg-gradient-to-r from-indigo-500 to-violet-500" />
-                    <div className="h-24 bg-gradient-to-br from-indigo-50 to-violet-50 relative flex items-center justify-center border-b border-gray-100 overflow-hidden">
-                      {group.image ? (
-                        <img src={getGroupImage(group.image)} alt={group.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <UsersIcon className="w-8 h-8 text-indigo-200" />
-                      )}
+                    <div className="relative flex items-center justify-center h-24 overflow-hidden border-b border-gray-100 bg-gradient-to-br from-indigo-50 to-violet-50">
+                      <img
+                        src={getGroupImageSrc(group.image)}
+                        onError={(e) => {
+                          if (e.currentTarget.src.endsWith(DEFAULT_GROUP_IMAGE)) return;
+                          e.currentTarget.src = DEFAULT_GROUP_IMAGE;
+                        }}
+                        alt={group.name}
+                        className="object-cover w-full h-full"
+                        loading="lazy"
+                        draggable={false}
+                      />
                       <span
                         className={`absolute top-2 right-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full ${isFull ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}
                       >
                         {isFull ? 'Full' : 'Active'}
                       </span>
                     </div>
-                    <div className="p-4 flex-1 flex flex-col">
+                    <div className="flex flex-col flex-1 p-4">
                       <span className="inline-block px-2 py-0.5 text-[10px] font-semibold text-indigo-700 bg-indigo-50 rounded-md mb-2 w-fit">
                         {group.subject}
                       </span>
-                      <h4 className="text-sm font-bold text-gray-900 mb-1 line-clamp-1">
+                      <h4 className="mb-1 text-sm font-bold text-gray-900 line-clamp-1">
                         {group.name}
                       </h4>
-                      <p className="text-xs text-gray-500 mb-4 line-clamp-1">
+                      <p className="mb-4 text-xs text-gray-500 line-clamp-1">
                         {group.description || 'No description provided.'}
                       </p>
                       <div className="mt-auto">
@@ -405,7 +563,7 @@ export const DashboardTab = ({
                             }}
                           />
                         </div>
-                        <button className="w-full py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+                        <button className="w-full py-2 text-xs font-semibold text-indigo-600 transition-colors rounded-lg bg-indigo-50 hover:bg-indigo-100">
                           Details
                         </button>
                       </div>
@@ -414,12 +572,12 @@ export const DashboardTab = ({
                 )
               })}
               {myGroupsList.length > 4 && (
-                <div className="flex-shrink-0 w-64 flex items-center justify-center">
+                <div className="flex items-center justify-center flex-shrink-0 w-64">
                   <button
                     onClick={() => setActiveTab('studygroups')}
-                    className="flex flex-col items-center justify-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+                    className="flex flex-col items-center justify-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                   >
-                    <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50">
                       <ChevronRightIcon className="w-6 h-6" />
                     </div>
                     View all {myGroupsList.length}
@@ -432,10 +590,10 @@ export const DashboardTab = ({
       </div>
 
       {/* 5. Active Study Groups */}
-      <div className="bg-white border border-gray-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+      <div className="flex flex-col overflow-hidden bg-white border shadow-sm border-gray-200/80 rounded-2xl">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-violet-50 rounded-lg">
+            <div className="p-2 rounded-lg bg-violet-50">
               <SearchIcon className="w-5 h-5 text-violet-600" />
             </div>
             <div>
@@ -451,13 +609,13 @@ export const DashboardTab = ({
 
         <div className="p-6">
           {studyGroups.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="py-8 text-center">
               <p className="text-sm font-medium text-gray-900">
                 No study groups available yet.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {studyGroups.slice(0, 4).map((group) => {
                 const uid = user?._id || user?.id
                 const isMember = group.members?.some(
@@ -469,18 +627,22 @@ export const DashboardTab = ({
                 return (
                   <div
                     key={group._id}
-                    className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all"
+                    className="flex items-center justify-between p-4 transition-all border border-gray-100 rounded-xl hover:border-indigo-200 hover:shadow-sm"
                   >
-                    <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
+                    <div className="flex items-center flex-1 min-w-0 gap-4 pr-4">
                       {/* Group Image Mini Thumbnail */}
-                      <div className="w-12 h-12 rounded-lg bg-indigo-50 flex-shrink-0 overflow-hidden border border-gray-100">
-                        {group.image ? (
-                          <img src={getGroupImage(group.image)} alt={group.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <UsersIcon className="w-5 h-5 text-indigo-200" />
-                          </div>
-                        )}
+                      <div className="flex-shrink-0 w-12 h-12 overflow-hidden border border-gray-100 rounded-lg bg-indigo-50">
+                        <img
+                          src={getGroupImageSrc(group.image)}
+                          onError={(e) => {
+                            if (e.currentTarget.src.endsWith(DEFAULT_GROUP_IMAGE)) return;
+                            e.currentTarget.src = DEFAULT_GROUP_IMAGE;
+                          }}
+                          alt={group.name}
+                          className="object-cover w-full h-full"
+                          loading="lazy"
+                          draggable={false}
+                        />
                       </div>
 
                       <div className="flex items-center gap-2 mb-1">
@@ -493,7 +655,7 @@ export const DashboardTab = ({
                           {isMember ? 'Joined' : isFull ? 'Full' : 'Open'}
                         </span>
                       </div>
-                      <h4 className="text-sm font-bold text-gray-900 truncate mb-1">
+                      <h4 className="mb-1 text-sm font-bold text-gray-900 truncate">
                         {group.name}
                       </h4>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -505,7 +667,7 @@ export const DashboardTab = ({
                     </div>
                     <button
                       onClick={() => setActiveTab('studygroups')}
-                      className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                      className="flex items-center justify-center flex-shrink-0 w-8 h-8 text-gray-400 transition-colors rounded-full bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600"
                     >
                       <ChevronRightIcon className="w-4 h-4" />
                     </button>
@@ -517,7 +679,7 @@ export const DashboardTab = ({
           {studyGroups.length > 4 && (
             <button
               onClick={() => setActiveTab('studygroups')}
-              className="w-full mt-4 py-3 text-sm font-medium text-indigo-600 bg-indigo-50/50 rounded-xl hover:bg-indigo-50 transition-colors"
+              className="w-full py-3 mt-4 text-sm font-medium text-indigo-600 transition-colors bg-indigo-50/50 rounded-xl hover:bg-indigo-50"
             >
               View all {studyGroups.length} groups
             </button>
@@ -527,14 +689,14 @@ export const DashboardTab = ({
 
       {/* 6. Notifications */}
       {(pendingRequests.length > 0 || groupInvitesList.length > 0) && (
-        <div className="bg-white border border-gray-200/80 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex flex-col overflow-hidden bg-white border shadow-sm border-gray-200/80 rounded-2xl">
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-50 rounded-lg">
+              <div className="p-2 rounded-lg bg-amber-50">
                 <BellIcon className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                   Notifications
                   <span className="px-2 py-0.5 text-xs font-bold text-white bg-amber-500 rounded-full">
                     {pendingRequests.length + groupInvitesList.length}
@@ -550,10 +712,10 @@ export const DashboardTab = ({
             </button>
           </div>
 
-          <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
             {pendingRequests.length > 0 && (
               <div>
-                <h4 className="text-sm font-bold text-gray-900 mb-3">
+                <h4 className="mb-3 text-sm font-bold text-gray-900">
                   Friend Requests
                 </h4>
                 <div className="space-y-3">
@@ -562,10 +724,10 @@ export const DashboardTab = ({
                       key={req._id}
                       className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 flex-shrink-0 overflow-hidden">
+                      <div className="flex items-center min-w-0 gap-3">
+                        <div className="flex items-center justify-center flex-shrink-0 overflow-hidden text-xs font-bold text-indigo-700 bg-indigo-100 rounded-full w-9 h-9">
                           {req.from?.profileImage ? (
-                            <img src={`${API_BASE}${req.from.profileImage}`} alt={req.from?.name} className="w-full h-full object-cover" />
+                            <img src={`${API_BASE}${req.from.profileImage}`} alt={req.from?.name} className="object-cover w-full h-full" />
                           ) : (
                             getInitials(req.from?.name)
                           )}
@@ -606,7 +768,7 @@ export const DashboardTab = ({
 
             {groupInvitesList.length > 0 && (
               <div>
-                <h4 className="text-sm font-bold text-gray-900 mb-3">
+                <h4 className="mb-3 text-sm font-bold text-gray-900">
                   Group Invites
                 </h4>
                 <div className="space-y-3">
