@@ -21,12 +21,20 @@ module.exports = defineConfig({
     video: 'retain-on-failure',
   },
 
-  webServer: {
-    command: 'cd frontend && npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: [
+    {
+      command: 'cd backend && npm run dev',
+      url: 'http://localhost:5000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command: 'cd frontend && npm run dev',
+      url: 'http://localhost:5173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  ],
 
   projects: [
     {

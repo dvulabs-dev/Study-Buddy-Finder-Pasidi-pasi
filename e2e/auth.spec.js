@@ -4,12 +4,15 @@ const { TEST_USER_EMAIL, TEST_USER_PASSWORD } = require('./testUser.config');
 // Helper to perform login via the UI
 async function loginViaUI(page, { email, password }) {
   await page.goto('/login');
+  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
 
   await page.getByLabel('Email Address').fill(email);
   await page.getByLabel('Password').fill(password);
 
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/(dashboard|admin)$/);
+  
+  // Wait for dashboard sidebar to appear instead of just checking URL
+  await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible({ timeout: 20000 });
 }
 
 // Happy path login test

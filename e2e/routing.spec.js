@@ -14,10 +14,14 @@ async function clearAuthState(page) {
 // Helper: login via UI with provided credentials
 async function loginViaUI(page, { email, password }) {
   await page.goto('/login');
+  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+  
   await page.getByLabel('Email Address').fill(email);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/(dashboard|admin)$/, { timeout: 15000 });
+  
+  // Wait for dashboard sidebar to appear instead of just checking URL
+  await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible({ timeout: 20000 });
 }
 
 // Unauthenticated users should be redirected from /dashboard to /login
