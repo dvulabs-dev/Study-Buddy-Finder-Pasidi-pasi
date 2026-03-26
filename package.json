@@ -1,0 +1,27 @@
+{
+  "name": "study-buddy-finder-pasidi-pasi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dvulabs-dev/Study-Buddy-Finder-Pasidi-pasi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dvulabs-dev/Study-Buddy-Finder-Pasidi-pasi/issues"
+  },
+  "homepage": "https://github.com/dvulabs-dev/Study-Buddy-Finder-Pasidi-pasi#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}
